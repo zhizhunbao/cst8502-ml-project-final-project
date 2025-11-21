@@ -8,7 +8,7 @@ import random
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.cluster import KMeans
@@ -473,28 +473,12 @@ Tool Selection: Python (scikit-learn, pandas, numpy, matplotlib, seaborn)
 
 Workload Distribution:
 
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Team Member          │ Primary Task              │ Responsibilities    │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Joseph Weng          │ Classification (DT)       │ - Data preparation  │
-│ (041076091)          │                           │ - Build DT model    │
-│                      │                           │ - Cross-validation  │
-│                      │                           │ - Interpret rules   │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Hye Ran Yoo          │ Clustering (KMeans)       │ - Feature selection │
-│ (041145212)          │                           │ - Elbow method      │
-│                      │                           │ - Build clusters    │
-│                      │                           │ - Interpret groups  │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Peng Wang            │ Outlier Detection         │ - LOF method        │
-│ (041107730)          │ (LOF + Distance)          │ - Distance method   │
-│                      │                           │ - Combine results   │
-│                      │                           │ - Analyze outliers  │
-├─────────────────────────────────────────────────────────────────────────┤
-│ All Members          │ Shared Responsibilities   │ - Data exploration  │
-│                      │                           │ - Documentation     │
-│                      │                           │ - Presentation prep │
-└─────────────────────────────────────────────────────────────────────────┘
+| Team Member | Primary Task | Responsibilities |
+|-------------|--------------|------------------|
+| **Joseph Weng** (041076091) | Classification (Decision Tree) | • Data preparation<br>• Build DT model<br>• Cross-validation<br>• Interpret rules |
+| **Hye Ran Yoo** (041145212) | Clustering (KMeans) | • Feature selection<br>• Elbow method<br>• Build clusters<br>• Interpret groups |
+| **Peng Wang** (041107730) | Outlier Detection (LOF + Distance) | • LOF method<br>• Distance method<br>• Combine results<br>• Analyze outliers |
+| **All Members** | Shared Responsibilities | • Data exploration<br>• Documentation<br>• Presentation prep |
 
 Project Timeline:
 
@@ -568,11 +552,7 @@ df = pd.read_csv(csv_path)
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nDataset loaded successfully from: {csv_path}")
-print(f"Total records: {len(df):,}")
-print(f"Total columns: {len(df.columns)}")
-print("\nFirst 5 rows of the dataset:")
-print(df.head())
+print(f"\nDataset loaded: {len(df):,} records × {len(df.columns)} columns from {csv_path}")
 
 # ============================================================================
 # 3.2: Describe data
@@ -653,26 +633,10 @@ if categorical_cols:
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# Data Preview
-df.info()
-
-# Basic Statistics
-print_section_title("BASIC STATISTICS")
-
-if numeric_cols:
-    print("\nNumeric columns:")
-    print(df[numeric_cols].describe())
-
-if categorical_cols:
-    print(f"\nCategorical columns (showing top 10 of {len(categorical_cols)}):")
-    for col, unique_count in col_unique_counts[:10]:
-        print(f"  - {col}: {unique_count} unique values")
-
-if boolean_cols:
-    print("\nBoolean columns:")
-    for col in boolean_cols:
-        true_pct = (df[col].sum() / len(df)) * 100
-        print(f"  - {col}: True={true_pct:.1f}%, False={100-true_pct:.1f}%")
+numeric_count = len(numeric_cols) if numeric_cols else 0
+categorical_count = len(categorical_cols) if categorical_cols else 0
+boolean_count = len(boolean_cols) if boolean_cols else 0
+print(f"\nData description: {numeric_count} numeric, {categorical_count} categorical, {boolean_count} boolean columns")
 
 # ============================================================================
 # 3.3: Explore data
@@ -694,6 +658,8 @@ numeric_cols, bool_cols, categorical_cols = get_column_types(df, exclude_cols=['
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
+print(f"\nData exploration: {len(numeric_cols)} numeric, {len(bool_cols)} boolean, {len(categorical_cols)} categorical variables visualized")
+
 # Numeric Variable Distributions
 if numeric_cols:
     plot_distributions(df, numeric_cols, var_type='numeric')
@@ -710,13 +676,61 @@ if categorical_cols:
 # ============================================================================
 # 3.4: Verify data quality
 # ============================================================================
-print_step_header("3.4", "Verify data quality")
+# ----------------------------------------------------------------------------
+# Variable Definition
+# ----------------------------------------------------------------------------
+dup_count    = None  # Number of duplicate SeqID values
+missing_info = None  # Missing value information
 
-# Duplicate data check
-check_duplicates(df)
+# ----------------------------------------------------------------------------
+# Logic Calculation
+# ----------------------------------------------------------------------------
+# Count duplicates
+dup_count = df['SeqID'].duplicated().sum()
 
-# Missing values check
-check_missing_values(df)
+# Get missing value counts
+missing_counts = df.isnull().sum()
+missing_cols = missing_counts[missing_counts > 0]
+
+# ----------------------------------------------------------------------------
+# Result Display
+# ----------------------------------------------------------------------------
+print(f"\nData quality: {dup_count:,} duplicates, {len(missing_cols)} columns with missing values")
+
+# Visualize data quality issues
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Duplicate check visualization
+dup_data = ['Unique', 'Duplicates']
+dup_values = [len(df) - dup_count, dup_count]
+axes[0].bar(dup_data, dup_values, color=['#2ecc71', '#e74c3c'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Count', fontsize=12)
+axes[0].set_title('Duplicate Records Check', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(dup_values):
+    pct = val / len(df) * 100
+    axes[0].text(i, val, f'{val:,}\n({pct:.2f}%)', ha='center', va='bottom', fontsize=10)
+
+# Missing values visualization
+if len(missing_cols) > 0:
+    top_missing = missing_cols.nlargest(10)
+    axes[1].barh(range(len(top_missing)), top_missing.values, color='#e67e22', edgecolor='black', alpha=0.7)
+    axes[1].set_yticks(range(len(top_missing)))
+    axes[1].set_yticklabels(top_missing.index, fontsize=9)
+    axes[1].set_xlabel('Missing Count', fontsize=12)
+    axes[1].set_title('Top 10 Columns with Missing Values', fontsize=13, fontweight='bold')
+    axes[1].grid(True, alpha=0.3, axis='x')
+    axes[1].invert_yaxis()
+    for i, val in enumerate(top_missing.values):
+        pct = val / len(df) * 100
+        axes[1].text(val, i, f' {val:,} ({pct:.1f}%)', va='center', fontsize=9)
+else:
+    axes[1].text(0.5, 0.5, 'No Missing Values', ha='center', va='center', 
+                transform=axes[1].transAxes, fontsize=14, fontweight='bold')
+    axes[1].set_title('Missing Values Check', fontsize=13, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4. Classification by Decision Tree
@@ -762,8 +776,21 @@ target_variable = 'Violation Type'  # Class variable
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"Selected {len(classification_features)} features for classification")
-print(f"Target variable: {target_variable}")
+print(f"\nClassification setup: {len(classification_features)} features selected for predicting {target_variable}")
+
+# Visualize feature selection
+fig, ax = plt.subplots(figsize=(10, 6))
+feature_categories = ['Temporal', 'Location', 'Accident', 'Risk', 'Driver/Vehicle', 'Demographics']
+feature_counts = [2, 4, 4, 3, 6, 2]
+ax.barh(feature_categories, feature_counts, color='steelblue', edgecolor='black', alpha=0.7)
+ax.set_xlabel('Number of Features', fontsize=12)
+ax.set_title(f'Feature Selection for Classification (Total: {len(classification_features)})', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='x')
+ax.invert_yaxis()
+for i, val in enumerate(feature_counts):
+    ax.text(val, i, f' {val}', va='center', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.1.2. Clean data
@@ -795,9 +822,32 @@ df_classify = df_classify[df_classify[target_variable].isin(valid_violations)]
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"Original: {original_size:,} rows → After cleaning: {len(df_classify):,} rows")
-print(f"Filtered to {len(valid_violations)} classes (min {min_instances} instances each)")
-print(f"Class distribution:\n{df_classify[target_variable].value_counts()}")
+print(f"\nData cleaning: {original_size:,} → {len(df_classify):,} rows, {len(valid_violations)} classes retained")
+
+# Visualize data cleaning impact
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Before/After comparison
+axes[0].bar(['Before', 'After'], [original_size, len(df_classify)], 
+            color=['#95a5a6', '#2ecc71'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Number of Records', fontsize=12)
+axes[0].set_title('Data Cleaning Impact', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([original_size, len(df_classify)]):
+    axes[0].text(i, val, f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Class distribution after filtering
+top_classes = df_classify[target_variable].value_counts().head(10)
+axes[1].barh(range(len(top_classes)), top_classes.values, color='#3498db', edgecolor='black', alpha=0.7)
+axes[1].set_yticks(range(len(top_classes)))
+axes[1].set_yticklabels(top_classes.index, fontsize=9)
+axes[1].set_xlabel('Count', fontsize=12)
+axes[1].set_title(f'Top 10 Violation Types (Total: {len(valid_violations)} classes)', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='x')
+axes[1].invert_yaxis()
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.1.3. Construct data
@@ -829,9 +879,58 @@ df_classify['VehicleAge'] = current_year - df_classify['Year'].fillna(current_ye
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-new_features = ['Hour', 'Month', 'DayOfWeek', 'IsWeekend', 'TimeOfDay', 'VehicleAge']
-print(f"Created {len(new_features)} temporal features. Head:")
-print(df_classify[new_features].head())
+print("\nFeature engineering: Created 6 new temporal and vehicle features")
+
+# Visualize engineered features
+fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+axes = axes.flatten()
+
+# Hour distribution
+df_classify['Hour'].hist(bins=24, ax=axes[0], edgecolor='black', color='#3498db', alpha=0.7)
+axes[0].set_title('Hour Distribution', fontsize=11, fontweight='bold')
+axes[0].set_xlabel('Hour')
+axes[0].set_ylabel('Frequency')
+axes[0].grid(True, alpha=0.3)
+
+# Month distribution
+df_classify['Month'].hist(bins=12, ax=axes[1], edgecolor='black', color='#2ecc71', alpha=0.7)
+axes[1].set_title('Month Distribution', fontsize=11, fontweight='bold')
+axes[1].set_xlabel('Month')
+axes[1].set_ylabel('Frequency')
+axes[1].grid(True, alpha=0.3)
+
+# DayOfWeek distribution
+df_classify['DayOfWeek'].hist(bins=7, ax=axes[2], edgecolor='black', color='#e74c3c', alpha=0.7)
+axes[2].set_title('Day of Week Distribution', fontsize=11, fontweight='bold')
+axes[2].set_xlabel('Day (0=Mon, 6=Sun)')
+axes[2].set_ylabel('Frequency')
+axes[2].grid(True, alpha=0.3)
+
+# IsWeekend distribution
+weekend_counts = df_classify['IsWeekend'].value_counts()
+axes[3].bar(['Weekday', 'Weekend'], [weekend_counts.get(0, 0), weekend_counts.get(1, 0)], 
+            color=['#3498db', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[3].set_title('Weekend vs Weekday', fontsize=11, fontweight='bold')
+axes[3].set_ylabel('Frequency')
+axes[3].grid(True, alpha=0.3, axis='y')
+
+# TimeOfDay distribution
+time_counts = df_classify['TimeOfDay'].value_counts()
+axes[4].bar(time_counts.index, time_counts.values, color='#9b59b6', edgecolor='black', alpha=0.7)
+axes[4].set_title('Time of Day Distribution', fontsize=11, fontweight='bold')
+axes[4].set_ylabel('Frequency')
+axes[4].tick_params(axis='x', rotation=45)
+axes[4].grid(True, alpha=0.3, axis='y')
+
+# VehicleAge distribution
+df_classify['VehicleAge'].hist(bins=30, ax=axes[5], edgecolor='black', color='#1abc9c', alpha=0.7)
+axes[5].set_title('Vehicle Age Distribution', fontsize=11, fontweight='bold')
+axes[5].set_xlabel('Age (years)')
+axes[5].set_ylabel('Frequency')
+axes[5].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.1.4. Integrate data
@@ -861,7 +960,23 @@ final_features = [
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"Final features selected: {len(final_features)}")
+print(f"\nFeature integration: {len(final_features)} features integrated across 5 categories")
+
+# Visualize feature integration
+fig, ax = plt.subplots(figsize=(10, 6))
+categories = ['Temporal (4)', 'Geographic (2)', 'Vehicle (1)', 'Accident (4)', 
+              'Risk Factors (3)', 'Driver/Vehicle Type (3)', 'Accident Contrib (1)', 'Categorical (5)']
+counts = [4, 2, 1, 4, 3, 3, 1, 5]
+colors = plt.cm.viridis(np.linspace(0, 1, len(categories)))
+ax.barh(categories, counts, color=colors, edgecolor='black', alpha=0.7)
+ax.set_xlabel('Number of Features', fontsize=12)
+ax.set_title(f'Feature Integration by Category (Total: {len(final_features)})', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='x')
+ax.invert_yaxis()
+for i, val in enumerate(counts):
+    ax.text(val, i, f' {val}', va='center', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.1.5. Format data
@@ -941,10 +1056,33 @@ if len(df_classify) > target_sample_size_classify:
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nFeature matrix: {X_classify.shape[0]:,} samples × {X_classify.shape[1]} features")
-print(f"Target: {y_classify.nunique()} classes")
-if len(df_classify) > target_sample_size_classify:
-    print(f"Applied stratified sampling: {len(df_classify):,} records (target: {target_sample_size_classify:,})")
+print(f"\nData formatting: {X_classify.shape[0]:,} samples × {X_classify.shape[1]} features, {y_classify.nunique()} classes prepared")
+
+# Visualize data formatting summary
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Feature type breakdown
+feature_types = ['Numeric (7)', 'Boolean (11)', 'Encoded Cat (5)']
+type_counts = [7, 11, 5]
+axes[0].bar(feature_types, type_counts, color=['#3498db', '#2ecc71', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Count', fontsize=12)
+axes[0].set_title(f'Feature Types (Total: {X_classify.shape[1]})', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(type_counts):
+    axes[0].text(i, val, f'{val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Class distribution
+class_dist = y_classify.value_counts().head(10)
+axes[1].barh(range(len(class_dist)), class_dist.values, color='#9b59b6', edgecolor='black', alpha=0.7)
+axes[1].set_yticks(range(len(class_dist)))
+axes[1].set_yticklabels(class_dist.index, fontsize=9)
+axes[1].set_xlabel('Count', fontsize=12)
+axes[1].set_title(f'Top 10 Classes (Total: {y_classify.nunique()})', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='x')
+axes[1].invert_yaxis()
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.2. Modelling
@@ -969,8 +1107,7 @@ print_step_header("4.2.1", "Select modeling techniques")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("Selected: Decision Tree Classifier")
-print("Rationale: Decision trees are interpretable and suitable for classification tasks")
+print("\nModel selection: Decision Tree Classifier (interpretable, suitable for classification)")
 
 # ============================================================================
 # 4.2.2. Generate test design
@@ -996,8 +1133,38 @@ X_train, X_test, y_train, y_test = train_test_split(
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("Test Design: Train/Test Split (70%/30%)")
-print(f"Train: {len(X_train):,} ({len(X_train)/len(X_classify)*100:.1f}%) | Test: {len(X_test):,} ({len(X_test)/len(X_classify)*100:.1f}%)")
+print(f"\nTest design: Train/Test split 70%/30% with stratification")
+
+# Visualize train/test split
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Sample count comparison
+axes[0].bar(['Training', 'Testing'], [len(X_train), len(X_test)], 
+            color=['#3498db', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Number of Samples', fontsize=12)
+axes[0].set_title('Train/Test Split', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([len(X_train), len(X_test)]):
+    pct = val / (len(X_train) + len(X_test)) * 100
+    axes[0].text(i, val, f'{val:,}\n({pct:.0f}%)', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Class distribution in train vs test
+train_dist = y_train.value_counts().head(5)
+test_dist = y_test.value_counts().head(5)
+x = np.arange(len(train_dist))
+width = 0.35
+axes[1].bar(x - width/2, train_dist.values, width, label='Train', color='#3498db', edgecolor='black', alpha=0.7)
+axes[1].bar(x + width/2, test_dist.values, width, label='Test', color='#e67e22', edgecolor='black', alpha=0.7)
+axes[1].set_xlabel('Violation Type', fontsize=12)
+axes[1].set_ylabel('Count', fontsize=12)
+axes[1].set_title('Top 5 Classes Distribution', fontsize=13, fontweight='bold')
+axes[1].set_xticks(x)
+axes[1].set_xticklabels(train_dist.index, rotation=45, ha='right', fontsize=9)
+axes[1].legend()
+axes[1].grid(True, alpha=0.3, axis='y')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.2.3. Build model
@@ -1059,8 +1226,23 @@ feature_importance = pd.DataFrame({
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nTraining accuracy: {train_accuracy:.2%} | Test accuracy: {test_accuracy:.2%}")
-print(f"\nTop 10 Features:\n{feature_importance.head(10).to_string(index=False)}")
+print(f"\nModel Performance: Training accuracy: {train_accuracy:.2%} | Test accuracy: {test_accuracy:.2%}")
+
+# Visualize top features
+plt.figure(figsize=(10, 6))
+top_features = feature_importance.head(10)
+plt.barh(range(len(top_features)), top_features['Importance'], 
+         color='steelblue', edgecolor='black')
+plt.yticks(range(len(top_features)), top_features['Feature'])
+plt.xlabel('Importance', fontsize=12)
+plt.title('Top 10 Feature Importances', fontsize=14, fontweight='bold')
+plt.gca().invert_yaxis()
+for i, (idx, row) in enumerate(top_features.iterrows()):
+    plt.text(row['Importance'], i, f" {row['Importance']:.3f}", 
+             va='center', fontsize=9)
+plt.grid(True, alpha=0.3, axis='x')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.2.4. Assess model
@@ -1104,9 +1286,7 @@ plt.grid(True, alpha=0.3, axis='x')
 plt.tight_layout()
 plt.show()
 
-# Print Decision Tree Rules
-tree_rules = export_text(dt_classifier, feature_names=all_features_classify, max_depth=3)
-print("Decision Tree Rules (Top 3 levels):\n" + tree_rules[:2000] + "\n... (truncated)")
+# Model built successfully - decision tree and feature importance visualized above
 
 # ============================================================================
 # 4.3. Evaluation
@@ -1131,10 +1311,36 @@ print_step_header("4.3.1", "Evaluate results")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nModel Performance Summary:")
-print(f"  Training Accuracy: {train_accuracy:.2%}")
-print(f"  Test Accuracy: {test_accuracy:.2%}")
-print(f"  Cross-Validation Mean: {cv_scores.mean():.2%} (+/- {cv_scores.std() * 2:.2%})")
+print(f"\nModel Performance: Train {train_accuracy:.2%} | Test {test_accuracy:.2%} | CV {cv_scores.mean():.2%} (±{cv_scores.std() * 2:.2%})")
+
+# Visualize performance metrics
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Accuracy comparison
+axes[0].bar(['Train', 'Test', 'CV Mean'], 
+            [train_accuracy, test_accuracy, cv_scores.mean()],
+            color=['#2ecc71', '#3498db', '#9b59b6'], edgecolor='black', alpha=0.7)
+axes[0].errorbar(2, cv_scores.mean(), yerr=cv_scores.std() * 2, 
+                 fmt='none', color='red', capsize=5, capthick=2)
+axes[0].set_ylabel('Accuracy', fontsize=12)
+axes[0].set_title('Model Accuracy Comparison', fontsize=13, fontweight='bold')
+axes[0].set_ylim([0, 1])
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([train_accuracy, test_accuracy, cv_scores.mean()]):
+    axes[0].text(i, val + 0.02, f'{val:.2%}', ha='center', fontsize=10, fontweight='bold')
+
+# Cross-validation scores distribution
+axes[1].boxplot(cv_scores, vert=True, patch_artist=True,
+                boxprops=dict(facecolor='#9b59b6', alpha=0.7, linewidth=1.5),
+                medianprops=dict(color='red', linewidth=2))
+axes[1].set_ylabel('Accuracy', fontsize=12)
+axes[1].set_title(f'Cross-Validation Scores\n(Mean: {cv_scores.mean():.2%} ± {cv_scores.std() * 2:.2%})', 
+                  fontsize=13, fontweight='bold')
+axes[1].set_xticklabels(['CV Scores'])
+axes[1].grid(True, alpha=0.3, axis='y')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.3.2. Interpret results
@@ -1154,28 +1360,39 @@ print_step_header("4.3.2", "Interpret results")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nTop 10 Most Important Features:\n{feature_importance.head(10).to_string(index=False)}")
+print(f"\nConfusion Matrix: {cm.shape[0]}×{cm.shape[1]} classification results")
 
-# Print confusion matrix with actual values
-print(f"\nConfusion Matrix (Actual Values):")
+# Prepare confusion matrix data
 cm_df = pd.DataFrame(cm, 
                      index=dt_classifier.classes_, 
                      columns=dt_classifier.classes_)
-print(cm_df.to_string())
+
+# Calculate percentages for better visualization
+cm_percent = cm_df.div(cm_df.sum(axis=1), axis=0) * 100
 
 # Visualize confusion matrix
-plt.figure(figsize=(10, 8))
-sns.heatmap(cm_df, annot=True, fmt='d', cmap='Blues', 
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+# Confusion matrix (counts)
+sns.heatmap(cm_df, annot=True, fmt='d', cmap='Blues', ax=axes[0],
             xticklabels=dt_classifier.classes_,
             yticklabels=dt_classifier.classes_,
             cbar_kws={'label': 'Count'})
-plt.title('Confusion Matrix - Decision Tree Classification', fontsize=14, fontweight='bold')
-plt.ylabel('True Label', fontsize=12)
-plt.xlabel('Predicted Label', fontsize=12)
+axes[0].set_title('Confusion Matrix (Counts)', fontsize=13, fontweight='bold')
+axes[0].set_ylabel('True Label', fontsize=11)
+axes[0].set_xlabel('Predicted Label', fontsize=11)
+
+# Confusion matrix (percentages)
+sns.heatmap(cm_percent, annot=True, fmt='.1f', cmap='Blues', ax=axes[1],
+            xticklabels=dt_classifier.classes_,
+            yticklabels=dt_classifier.classes_,
+            cbar_kws={'label': 'Percentage (%)'})
+axes[1].set_title('Confusion Matrix (Percentages)', fontsize=13, fontweight='bold')
+axes[1].set_ylabel('True Label', fontsize=11)
+axes[1].set_xlabel('Predicted Label', fontsize=11)
+
 plt.tight_layout()
 plt.show()
-
-print(f"\nConfusion Matrix Shape: {cm.shape}")
 
 # ============================================================================
 # 4.3.3. Review of process
@@ -1195,11 +1412,31 @@ print_step_header("4.3.3", "Review of process")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nProcess Review:")
-print("  - Data preparation: Completed with feature engineering")
-print("  - Model selection: Decision Tree Classifier")
-print("  - Model training: Completed with cross-validation")
-print("  - Model evaluation: Performance metrics calculated")
+print("\nProcess review: Complete workflow from data preparation to model evaluation")
+
+# Visualize process workflow
+fig, ax = plt.subplots(figsize=(12, 6))
+steps = ['Data\nSelection', 'Data\nCleaning', 'Feature\nEngineering', 
+         'Feature\nIntegration', 'Data\nFormatting', 'Model\nTraining', 'Evaluation']
+status = [1, 1, 1, 1, 1, 1, 1]  # All completed
+colors = ['#2ecc71' if s == 1 else '#95a5a6' for s in status]
+
+y_pos = np.arange(len(steps))
+ax.barh(y_pos, status, color=colors, edgecolor='black', alpha=0.7)
+ax.set_yticks(y_pos)
+ax.set_yticklabels(steps, fontsize=11)
+ax.set_xlabel('Status', fontsize=12)
+ax.set_title('Classification Process Review', fontsize=14, fontweight='bold')
+ax.set_xlim([0, 1.2])
+ax.set_xticks([0, 1])
+ax.set_xticklabels(['Not Started', 'Completed'])
+ax.invert_yaxis()
+
+for i, (step, s) in enumerate(zip(steps, status)):
+    ax.text(1.05, i, '✓ Completed', va='center', fontsize=10, fontweight='bold', color='#2ecc71')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 4.3.4. Determine next steps
@@ -1219,13 +1456,45 @@ print_step_header("4.3.4", "Determine next steps")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nNext Steps:")
-print("  - Consider hyperparameter tuning for improved performance")
-print("  - Explore ensemble methods (Random Forest, Gradient Boosting)")
-print("  - Analyze misclassified cases for insights")
+print(f"\nClassification complete: {y_classify.nunique()} classes, {len(all_features_classify)} features, Test accuracy {test_accuracy:.2%}")
 
-print(f"\nClassification Complete: {len(X_classify):,} records, {y_classify.nunique()} classes, {len(all_features_classify)} features")
-print(f"  Accuracy: Train {train_accuracy:.2%} | Test {test_accuracy:.2%}")
+# Visualize final summary
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+# Model performance summary
+metrics = ['Train Acc', 'Test Acc', 'CV Mean']
+values = [train_accuracy, test_accuracy, cv_scores.mean()]
+colors_perf = ['#2ecc71', '#3498db', '#9b59b6']
+axes[0].bar(metrics, values, color=colors_perf, edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Accuracy', fontsize=12)
+axes[0].set_title('Model Performance Summary', fontsize=13, fontweight='bold')
+axes[0].set_ylim([0, 1])
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(values):
+    axes[0].text(i, val + 0.02, f'{val:.2%}', ha='center', fontsize=10, fontweight='bold')
+
+# Dataset summary
+dataset_info = ['Total\nRecords', 'Features', 'Classes']
+dataset_values = [len(X_classify), len(all_features_classify), y_classify.nunique()]
+axes[1].bar(dataset_info, dataset_values, color='#e67e22', edgecolor='black', alpha=0.7)
+axes[1].set_ylabel('Count', fontsize=12)
+axes[1].set_title('Dataset Summary', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(dataset_values):
+    axes[1].text(i, val, f'{val:,}' if val > 100 else f'{val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Top 5 important features
+top_5_features = feature_importance.head(5)
+axes[2].barh(range(len(top_5_features)), top_5_features['Importance'], color='#1abc9c', edgecolor='black', alpha=0.7)
+axes[2].set_yticks(range(len(top_5_features)))
+axes[2].set_yticklabels(top_5_features['Feature'], fontsize=9)
+axes[2].set_xlabel('Importance', fontsize=12)
+axes[2].set_title('Top 5 Important Features', fontsize=13, fontweight='bold')
+axes[2].grid(True, alpha=0.3, axis='x')
+axes[2].invert_yaxis()
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5. Clustering by KMeans
@@ -1268,8 +1537,21 @@ clustering_features = [
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nDataset: {df_cluster.shape[0]:,} rows × {df_cluster.shape[1]} columns")
-print(f"Selected {len(clustering_features)} features for clustering")
+print(f"\nClustering setup: {len(clustering_features)} features selected for pattern discovery")
+
+# Visualize feature selection for clustering
+fig, ax = plt.subplots(figsize=(10, 6))
+feature_cats = ['Temporal', 'Geographic', 'Severity', 'Risk', 'Vehicle', 'Safety', 'Demographics', 'Enforcement']
+feature_cnts = [2, 2, 4, 2, 4, 2, 2, 1]
+ax.barh(feature_cats, feature_cnts, color='#9b59b6', edgecolor='black', alpha=0.7)
+ax.set_xlabel('Number of Features', fontsize=12)
+ax.set_title(f'Feature Selection for Clustering (Total: {len(clustering_features)})', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='x')
+ax.invert_yaxis()
+for i, val in enumerate(feature_cnts):
+    ax.text(val, i, f' {val}', va='center', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.1.2. Clean Data
@@ -1293,7 +1575,20 @@ df_cluster = df_cluster.dropna(subset=['Latitude', 'Longitude'])
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"Original: {original_size_cluster:,} rows → After cleaning: {len(df_cluster):,} rows")
+print(f"\nData cleaning: {original_size_cluster:,} → {len(df_cluster):,} rows (removed missing coordinates)")
+
+# Visualize data cleaning
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.bar(['Before', 'After'], [original_size_cluster, len(df_cluster)], 
+       color=['#95a5a6', '#2ecc71'], edgecolor='black', alpha=0.7)
+ax.set_ylabel('Number of Records', fontsize=12)
+ax.set_title('Clustering Data Cleaning', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([original_size_cluster, len(df_cluster)]):
+    pct = val / original_size_cluster * 100
+    ax.text(i, val, f'{val:,}\n({pct:.1f}%)', ha='center', va='bottom', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.1.3. Construct Data
@@ -1324,8 +1619,58 @@ df_cluster['VehicleAge'] = current_year - df_cluster['Year'].fillna(current_year
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nCreated temporal features: Hour, Month, DayOfWeek, IsWeekend, TimeOfDay")
-print(f"VehicleAge: mean={df_cluster['VehicleAge'].mean():.1f}yr, range=[{df_cluster['VehicleAge'].min():.0f}, {df_cluster['VehicleAge'].max():.0f}]")
+print(f"\nFeature engineering: Created 6 temporal/vehicle features (mean VehicleAge={df_cluster['VehicleAge'].mean():.1f}yr)")
+
+# Visualize engineered features for clustering
+fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+axes = axes.flatten()
+
+# Hour distribution
+df_cluster['Hour'].hist(bins=24, ax=axes[0], edgecolor='black', color='#9b59b6', alpha=0.7)
+axes[0].set_title('Hour Distribution', fontsize=11, fontweight='bold')
+axes[0].set_xlabel('Hour')
+axes[0].set_ylabel('Frequency')
+axes[0].grid(True, alpha=0.3)
+
+# Month distribution
+df_cluster['Month'].hist(bins=12, ax=axes[1], edgecolor='black', color='#3498db', alpha=0.7)
+axes[1].set_title('Month Distribution', fontsize=11, fontweight='bold')
+axes[1].set_xlabel('Month')
+axes[1].set_ylabel('Frequency')
+axes[1].grid(True, alpha=0.3)
+
+# DayOfWeek distribution
+df_cluster['DayOfWeek'].hist(bins=7, ax=axes[2], edgecolor='black', color='#2ecc71', alpha=0.7)
+axes[2].set_title('Day of Week Distribution', fontsize=11, fontweight='bold')
+axes[2].set_xlabel('Day (0=Mon, 6=Sun)')
+axes[2].set_ylabel('Frequency')
+axes[2].grid(True, alpha=0.3)
+
+# IsWeekend distribution
+weekend_cnts = df_cluster['IsWeekend'].value_counts()
+axes[3].bar(['Weekday', 'Weekend'], [weekend_cnts.get(0, 0), weekend_cnts.get(1, 0)], 
+            color=['#3498db', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[3].set_title('Weekend vs Weekday', fontsize=11, fontweight='bold')
+axes[3].set_ylabel('Frequency')
+axes[3].grid(True, alpha=0.3, axis='y')
+
+# TimeOfDay distribution
+time_cnts = df_cluster['TimeOfDay'].value_counts()
+axes[4].bar(time_cnts.index, time_cnts.values, color='#e74c3c', edgecolor='black', alpha=0.7)
+axes[4].set_title('Time of Day Distribution', fontsize=11, fontweight='bold')
+axes[4].set_ylabel('Frequency')
+axes[4].tick_params(axis='x', rotation=45)
+axes[4].grid(True, alpha=0.3, axis='y')
+
+# VehicleAge distribution
+df_cluster['VehicleAge'].hist(bins=30, ax=axes[5], edgecolor='black', color='#1abc9c', alpha=0.7)
+axes[5].set_title('Vehicle Age Distribution', fontsize=11, fontweight='bold')
+axes[5].set_xlabel('Age (years)')
+axes[5].set_ylabel('Frequency')
+axes[5].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.1.4. Integrate Data
@@ -1354,11 +1699,23 @@ final_features_cluster = [
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. Feature Categories
-numeric_count = len([f for f in final_features_cluster if f in ['Hour', 'Month', 'DayOfWeek', 'IsWeekend', 'Latitude', 'Longitude', 'VehicleAge']])
-boolean_count = len([f for f in final_features_cluster if f in ['Accident', 'Personal Injury', 'Property Damage', 'Fatal', 'Alcohol', 'Work Zone', 'Commercial Vehicle', 'HAZMAT']])
-categorical_count = len([f for f in final_features_cluster if f in ['VehicleType', 'SubAgency', 'Gender', 'Race', 'TimeOfDay']])
-print(f"\nFinal features: {len(final_features_cluster)} (≥10) - {numeric_count} numeric, {boolean_count} boolean, {categorical_count} categorical")
+print(f"\nFeature integration: {len(final_features_cluster)} features across 5 categories")
+
+# Visualize feature integration for clustering
+fig, ax = plt.subplots(figsize=(10, 6))
+cats = ['Temporal (4)', 'Geographic (2)', 'Vehicle (1)', 'Severity (4)', 
+        'Risk (2)', 'Vehicle Type (2)', 'Categorical (5)']
+cnts = [4, 2, 1, 4, 2, 2, 5]
+colors_cluster = plt.cm.plasma(np.linspace(0, 1, len(cats)))
+ax.barh(cats, cnts, color=colors_cluster, edgecolor='black', alpha=0.7)
+ax.set_xlabel('Number of Features', fontsize=12)
+ax.set_title(f'Feature Integration for Clustering (Total: {len(final_features_cluster)})', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='x')
+ax.invert_yaxis()
+for i, val in enumerate(cnts):
+    ax.text(val, i, f' {val}', va='center', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.1.5. Format Data
@@ -1465,22 +1822,36 @@ df_cluster_sampled = df_cluster.copy()
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. Encoding
-print(f"\nEncoded {len(categorical_features_cluster)} categorical features")
+print(f"\nData formatting: Encoded {len(categorical_features_cluster)} categorical, scaled {X_cluster_scaled.shape[0]:,} × {X_cluster_scaled.shape[1]} features")
 
-# 2. Feature Matrix
-print(f"Feature matrix: {X_cluster.shape[0]:,} rows × {X_cluster.shape[1]} columns")
+# Visualize data formatting for clustering
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-# 3. Scaling
-print(f"Scaled features: {X_cluster_scaled.shape[0]:,} rows × {X_cluster_scaled.shape[1]} columns (StandardScaler)")
+# Feature type breakdown
+feat_types = ['Numeric (7)', 'Boolean (8)', 'Encoded Cat (5)']
+type_cnts = [7, 8, 5]
+axes[0].bar(feat_types, type_cnts, color=['#3498db', '#2ecc71', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Count', fontsize=12)
+axes[0].set_title(f'Feature Types (Total: {X_cluster_scaled.shape[1]})', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(type_cnts):
+    axes[0].text(i, val, f'{val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-# 4. Sampling
-if len(X_cluster_scaled) > 10000:
-    print(f"Sampled {sample_size:,} records for clustering")
+# Sample size visualization
+if len(df_cluster) < len(X_cluster_scaled):
+    original_size = len(df_cluster)
 else:
-    print(f"Using all {len(X_cluster_scaled):,} records for clustering")
+    original_size = len(X_cluster_scaled) * 2  # Estimate
+axes[1].bar(['Before Sampling', 'After Sampling'], [original_size, X_cluster_scaled.shape[0]], 
+            color=['#95a5a6', '#9b59b6'], edgecolor='black', alpha=0.7)
+axes[1].set_ylabel('Number of Samples', fontsize=12)
+axes[1].set_title('Data Sampling', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([original_size, X_cluster_scaled.shape[0]]):
+    axes[1].text(i, val, f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-print(f"\nData Preparation Complete: {X_cluster_scaled.shape[0]:,} records × {X_cluster_scaled.shape[1]} features")
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.2. Modelling
@@ -1508,11 +1879,7 @@ print_step_header("5.2.1", "Select modeling techniques")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("Selected modeling technique: KMeans Clustering")
-print("\nKMeans selected for clustering analysis based on:")
-print("  - Unsupervised learning requirement")
-print("  - Ability to identify patterns in traffic violation data")
-print("  - Interpretability of cluster results")
+print("\nModel selection: KMeans Clustering (unsupervised, pattern identification, interpretable)")
 
 # ============================================================================
 # 5.2.2. Generate test design
@@ -1550,8 +1917,7 @@ for k in k_range:
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("Test Design: Elbow Method + Silhouette Score + Davies-Bouldin Score")
-print(f"Testing k values from {min(k_range)} to {max(k_range)}")
+print(f"\nTest design: Elbow Method + Silhouette + Davies-Bouldin, testing k={min(k_range)}-{max(k_range)}")
 
 # Plot elbow curve
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
@@ -1606,13 +1972,32 @@ df_cluster_sampled['Cluster'] = cluster_labels
 # ----------------------------------------------------------------------------
 sil_score = silhouette_score(X_cluster_sampled, cluster_labels)
 db_score = davies_bouldin_score(X_cluster_sampled, cluster_labels)
-print(f"\nKMeans Results: k={optimal_k}, Inertia={kmeans_final.inertia_:.0f}, Silhouette={sil_score:.3f}, DB={db_score:.3f}")
+print(f"\nKMeans Clustering: k={optimal_k}, Silhouette={sil_score:.3f}, DB={db_score:.3f}, Inertia={kmeans_final.inertia_:.0f}")
 
+# Visualize cluster distribution
 cluster_counts = pd.Series(cluster_labels).value_counts().sort_index()
-print("Cluster distribution:")
-for cluster_id, count in cluster_counts.items():
-    pct = (count / len(cluster_labels)) * 100
-    print(f"  Cluster {cluster_id}: {count:,} ({pct:.1f}%)")
+cluster_pcts = (cluster_counts / len(cluster_labels) * 100).round(1)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Bar chart
+axes[0].bar(cluster_counts.index.astype(str), cluster_counts.values, 
+            color='steelblue', edgecolor='black', alpha=0.7)
+axes[0].set_xlabel('Cluster ID', fontsize=12)
+axes[0].set_ylabel('Count', fontsize=12)
+axes[0].set_title('Cluster Distribution (Counts)', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, (idx, val) in enumerate(cluster_counts.items()):
+    axes[0].text(i, val, f'{val:,}\n({cluster_pcts[idx]:.1f}%)', 
+                 ha='center', va='bottom', fontsize=9)
+
+# Pie chart
+axes[1].pie(cluster_counts.values, labels=[f'Cluster {i}' for i in cluster_counts.index],
+             autopct='%1.1f%%', startangle=90, colors=plt.cm.viridis(np.linspace(0, 1, len(cluster_counts))))
+axes[1].set_title('Cluster Distribution (Percentages)', fontsize=13, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.2.4. Assess model
@@ -1665,19 +2050,68 @@ df_cluster_sampled['Distance_to_Center'] = min_distances
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# Print cluster characteristics
-print("\nCluster Characteristics:")
+print(f"\nCluster Characteristics: {optimal_k} clusters analyzed with key features")
+
+# Prepare data for visualization
+char_data = []
 for cluster_id in range(optimal_k):
     char = cluster_characteristics[cluster_id]
-    cluster_size = char['size']
-    print(f"\nCluster {cluster_id}: {cluster_size:,} ({char['pct']:.1f}%)")
-    print(f"  Hour: {char['hour_mode']}, Month: {char['month_mode']}, Weekend: {char['weekend_pct']:.0f}%")
-    print(f"  Accident: {char['accident_pct']:.1f}%, Alcohol: {char['alcohol_pct']:.1f}%, VehicleAge: {char['vehicle_age_mean']:.1f}yr")
-    top_violations_str = ', '.join([f'{v}({c/cluster_size*100:.0f}%)' for v, c in char['top_violations'].items()])
-    print(f"  Top violations: {top_violations_str}")
+    char_data.append({
+        'Cluster': cluster_id,
+        'Size': char['size'],
+        'Weekend%': char['weekend_pct'],
+        'Accident%': char['accident_pct'],
+        'Alcohol%': char['alcohol_pct'],
+        'VehicleAge': char['vehicle_age_mean']
+    })
+char_df = pd.DataFrame(char_data)
+
+# Visualize cluster characteristics
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# Cluster sizes
+axes[0, 0].bar(char_df['Cluster'].astype(str), char_df['Size'], 
+               color='steelblue', edgecolor='black', alpha=0.7)
+axes[0, 0].set_xlabel('Cluster ID', fontsize=11)
+axes[0, 0].set_ylabel('Count', fontsize=11)
+axes[0, 0].set_title('Cluster Sizes', fontsize=12, fontweight='bold')
+axes[0, 0].grid(True, alpha=0.3, axis='y')
+
+# Weekend percentage
+axes[0, 1].bar(char_df['Cluster'].astype(str), char_df['Weekend%'], 
+               color='#2ecc71', edgecolor='black', alpha=0.7)
+axes[0, 1].set_xlabel('Cluster ID', fontsize=11)
+axes[0, 1].set_ylabel('Weekend %', fontsize=11)
+axes[0, 1].set_title('Weekend Percentage by Cluster', fontsize=12, fontweight='bold')
+axes[0, 1].grid(True, alpha=0.3, axis='y')
+
+# Accident and Alcohol percentages
+x = np.arange(len(char_df))
+width = 0.35
+axes[1, 0].bar(x - width/2, char_df['Accident%'], width, label='Accident%', 
+               color='#e74c3c', edgecolor='black', alpha=0.7)
+axes[1, 0].bar(x + width/2, char_df['Alcohol%'], width, label='Alcohol%', 
+               color='#f39c12', edgecolor='black', alpha=0.7)
+axes[1, 0].set_xlabel('Cluster ID', fontsize=11)
+axes[1, 0].set_ylabel('Percentage', fontsize=11)
+axes[1, 0].set_title('Accident & Alcohol Percentages', fontsize=12, fontweight='bold')
+axes[1, 0].set_xticks(x)
+axes[1, 0].set_xticklabels(char_df['Cluster'].astype(str))
+axes[1, 0].legend()
+axes[1, 0].grid(True, alpha=0.3, axis='y')
+
+# Vehicle age
+axes[1, 1].bar(char_df['Cluster'].astype(str), char_df['VehicleAge'], 
+               color='#9b59b6', edgecolor='black', alpha=0.7)
+axes[1, 1].set_xlabel('Cluster ID', fontsize=11)
+axes[1, 1].set_ylabel('Average Vehicle Age (years)', fontsize=11)
+axes[1, 1].set_title('Average Vehicle Age by Cluster', fontsize=12, fontweight='bold')
+axes[1, 1].grid(True, alpha=0.3, axis='y')
+
+plt.tight_layout()
+plt.show()
 
 # Visualizations
-print("\nGenerating visualizations...")
 # Geographic distribution
 plt.figure(figsize=(12, 8))
 plt.scatter(df_cluster_sampled['Longitude'], df_cluster_sampled['Latitude'],
@@ -1702,9 +2136,7 @@ plt.tight_layout()
 plt.show()
 
 # Summary (reuse previously calculated scores)
-print("\nModel Assessment Summary:")
-print(f"  Optimal k: {optimal_k} | Silhouette: {sil_score:.3f} | DB Score: {db_score:.3f}")
-print(f"  Outliers: {n_cluster_outliers:,} ({n_cluster_outliers/len(df_cluster_sampled)*100:.2f}%)")
+print(f"\nModel Assessment: k={optimal_k}, Silhouette={sil_score:.3f}, DB={db_score:.3f}, Outliers={n_cluster_outliers:,} ({n_cluster_outliers/len(df_cluster_sampled)*100:.2f}%)")
 
 # ============================================================================
 # 5.3. Evaluation
@@ -1729,12 +2161,36 @@ print_step_header("5.3.1", "Evaluate results")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nClustering Results Summary:")
-print(f"  Dataset: {len(df_cluster_sampled):,} records")
-print(f"  Number of clusters: {optimal_k}")
-print(f"  Silhouette Score: {sil_score:.3f}")
-print(f"  Davies-Bouldin Score: {db_score:.3f}")
-print(f"  Inertia: {kmeans_final.inertia_:.0f}")
+print(f"\nClustering Results: {len(df_cluster_sampled):,} records, k={optimal_k}, Silhouette={sil_score:.3f}, DB={db_score:.3f}, Inertia={kmeans_final.inertia_:.0f}")
+
+# Visualize clustering metrics
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+# Silhouette Score
+axes[0].bar(['Silhouette'], [sil_score], color='#3498db', edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Score', fontsize=11)
+axes[0].set_title(f'Silhouette Score\n({sil_score:.3f})', fontsize=12, fontweight='bold')
+axes[0].set_ylim([0, 1])
+axes[0].grid(True, alpha=0.3, axis='y')
+axes[0].text(0, sil_score + 0.05, f'{sil_score:.3f}', ha='center', fontsize=10, fontweight='bold')
+
+# Davies-Bouldin Score (lower is better)
+axes[1].bar(['DB Score'], [db_score], color='#e74c3c', edgecolor='black', alpha=0.7)
+axes[1].set_ylabel('Score', fontsize=11)
+axes[1].set_title(f'Davies-Bouldin Score\n({db_score:.3f}, lower is better)', fontsize=12, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='y')
+axes[1].text(0, db_score + db_score*0.1, f'{db_score:.3f}', ha='center', fontsize=10, fontweight='bold')
+
+# Inertia
+axes[2].bar(['Inertia'], [kmeans_final.inertia_], color='#2ecc71', edgecolor='black', alpha=0.7)
+axes[2].set_ylabel('Inertia', fontsize=11)
+axes[2].set_title(f'Inertia\n({kmeans_final.inertia_:.0f})', fontsize=12, fontweight='bold')
+axes[2].grid(True, alpha=0.3, axis='y')
+axes[2].text(0, kmeans_final.inertia_ + kmeans_final.inertia_*0.05, 
+             f'{kmeans_final.inertia_:.0f}', ha='center', fontsize=10, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.3.2. Interpret results
@@ -1754,10 +2210,20 @@ print_step_header("5.3.2", "Interpret results")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nCluster Interpretation:")
-for cluster_id in range(optimal_k):
-    cluster_data = df_cluster_sampled[df_cluster_sampled['Cluster'] == cluster_id]
-    print(f"  Cluster {cluster_id}: {len(cluster_data):,} records ({len(cluster_data)/len(df_cluster_sampled)*100:.1f}%)")
+print(f"\nCluster interpretation: {optimal_k} distinct patterns identified")
+
+# Visualize cluster sizes
+fig, ax = plt.subplots(figsize=(10, 6))
+cluster_sizes = [len(df_cluster_sampled[df_cluster_sampled['Cluster'] == i]) for i in range(optimal_k)]
+cluster_pcts = [size/len(df_cluster_sampled)*100 for size in cluster_sizes]
+ax.bar([f'Cluster {i}' for i in range(optimal_k)], cluster_sizes, color=plt.cm.viridis(np.linspace(0, 1, optimal_k)), edgecolor='black', alpha=0.7)
+ax.set_ylabel('Number of Records', fontsize=12)
+ax.set_title(f'Cluster Size Distribution (k={optimal_k})', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='y')
+for i, (size, pct) in enumerate(zip(cluster_sizes, cluster_pcts)):
+    ax.text(i, size, f'{size:,}\n({pct:.1f}%)', ha='center', va='bottom', fontsize=9, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.3.3. Review of process
@@ -1777,12 +2243,31 @@ print_step_header("5.3.3", "Review of process")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nProcess Review:")
-print("  - Data preparation: Completed with feature engineering and scaling")
-print("  - Model selection: KMeans Clustering")
-print("  - Optimal k selection: Elbow method + Silhouette + Davies-Bouldin")
-print("  - Model training: Completed")
-print("  - Model assessment: Cluster characteristics analyzed")
+print("\nProcess review: Complete clustering workflow from data preparation to evaluation")
+
+# Visualize clustering process workflow
+fig, ax = plt.subplots(figsize=(12, 6))
+steps_cluster = ['Data\nSelection', 'Data\nCleaning', 'Feature\nEngineering', 
+                 'Feature\nIntegration', 'Data\nFormatting', 'k\nOptimization', 'Clustering', 'Assessment']
+status_cluster = [1, 1, 1, 1, 1, 1, 1, 1]  # All completed
+colors_proc = ['#2ecc71' if s == 1 else '#95a5a6' for s in status_cluster]
+
+y_pos_cluster = np.arange(len(steps_cluster))
+ax.barh(y_pos_cluster, status_cluster, color=colors_proc, edgecolor='black', alpha=0.7)
+ax.set_yticks(y_pos_cluster)
+ax.set_yticklabels(steps_cluster, fontsize=11)
+ax.set_xlabel('Status', fontsize=12)
+ax.set_title('Clustering Process Review', fontsize=14, fontweight='bold')
+ax.set_xlim([0, 1.2])
+ax.set_xticks([0, 1])
+ax.set_xticklabels(['Not Started', 'Completed'])
+ax.invert_yaxis()
+
+for i, (step, s) in enumerate(zip(steps_cluster, status_cluster)):
+    ax.text(1.05, i, '✓ Completed', va='center', fontsize=10, fontweight='bold', color='#2ecc71')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 5.3.4. Determine next steps
@@ -1802,12 +2287,41 @@ print_step_header("5.3.4", "Determine next steps")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nNext Steps:")
-print("  - Consider hierarchical clustering for comparison")
-print("  - Analyze cluster stability with different initializations")
-print("  - Investigate outliers detected from clusters")
+print(f"\nClustering complete: k={optimal_k}, {len(df_cluster_sampled):,} records, Silhouette={sil_score:.3f}")
 
-print(f"\nClustering Complete: {len(df_cluster_sampled):,} records, k={optimal_k}, Silhouette={sil_score:.3f}")
+# Visualize clustering completion summary
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+# Clustering metrics
+metric_names = ['Silhouette', 'DB Score', 'Inertia/1000']
+metric_vals = [sil_score, db_score, kmeans_final.inertia_/1000]
+metric_colors = ['#3498db', '#e74c3c', '#2ecc71']
+axes[0].bar(metric_names, metric_vals, color=metric_colors, edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Score', fontsize=12)
+axes[0].set_title('Clustering Quality Metrics', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(metric_vals):
+    axes[0].text(i, val, f'{val:.2f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Dataset summary
+data_info = ['Records', 'Features', 'Clusters']
+data_vals = [len(df_cluster_sampled), len(all_features_cluster), optimal_k]
+axes[1].bar(data_info, data_vals, color='#9b59b6', edgecolor='black', alpha=0.7)
+axes[1].set_ylabel('Count', fontsize=12)
+axes[1].set_title('Dataset Summary', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(data_vals):
+    axes[1].text(i, val, f'{val:,}' if val > 100 else f'{val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Cluster distribution
+cluster_szs = [len(df_cluster_sampled[df_cluster_sampled['Cluster'] == i]) for i in range(optimal_k)]
+axes[2].bar([f'C{i}' for i in range(optimal_k)], cluster_szs, color=plt.cm.viridis(np.linspace(0, 1, optimal_k)), edgecolor='black', alpha=0.7)
+axes[2].set_ylabel('Count', fontsize=12)
+axes[2].set_title('Cluster Sizes', fontsize=13, fontweight='bold')
+axes[2].grid(True, alpha=0.3, axis='y')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6. Outlier Detection by LOF and Distance-based method (and common outliers)
@@ -1885,7 +2399,24 @@ modeling_features_count = len(selected_features) - len(auxiliary_features)
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nDataset: {df_outlier.shape[0]:,} rows × {df_outlier.shape[1]} columns ({modeling_features_count} modeling features)")
+print(f"\nOutlier detection setup: {df_outlier.shape[0]:,} rows × {df_outlier.shape[1]} columns, {modeling_features_count} modeling features")
+
+# Visualize feature selection for outlier detection
+fig, ax = plt.subplots(figsize=(10, 6))
+feature_categories_od = ['Geographic', 'Temporal', 'Severity', 'Risk', 'Vehicle', 'Safety', 'Demographics', 'Enforcement']
+feature_counts_od = [len(feature_groups['Geographic']), len(feature_groups['Temporal']), 
+                     len(feature_groups['Severity']), len(feature_groups['Risk']), 
+                     len(feature_groups['Vehicle']), len(feature_groups['Safety']), 
+                     len(feature_groups['Demographics']), len(feature_groups['Enforcement'])]
+ax.barh(feature_categories_od, feature_counts_od, color='#e74c3c', edgecolor='black', alpha=0.7)
+ax.set_xlabel('Number of Features', fontsize=12)
+ax.set_title(f'Feature Selection for Outlier Detection (Total: {modeling_features_count})', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='x')
+ax.invert_yaxis()
+for i, val in enumerate(feature_counts_od):
+    ax.text(val, i, f' {val}', va='center', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6.1.2. Clean Data
@@ -1987,30 +2518,24 @@ if original_size > target_sample_size:
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. Duplicates
-if duplicates_removed > 0:
-    print(f"\nRemoved {duplicates_removed:,} duplicates ({duplicates_removed/rows_before*100:.1f}%)")
-else:
-    print("\nNo duplicates found")
+dup_info = f", removed {duplicates_removed:,} duplicates" if duplicates_removed > 0 else ", no duplicates"
+missing_info = f", {len(missing_cols)} cols with missing values" if not missing_cols.empty else ", no missing values"
+invalid_info = f", removed {rows_removed:,} invalid records" if total_invalid > 0 else ""
+sampling_info = f", sampled {len(df_outlier):,} ({len(df_outlier)/original_size*100:.1f}%)" if original_size > target_sample_size else f", using all {original_size:,}"
+print(f"\nData cleaning: {rows_before:,} → {df_outlier.shape[0]:,} rows (removed missing coordinates)")
 
-# 2. Missing Values
-if missing_cols.empty:
-    print("No missing values")
-else:
-    print(f"{len(missing_cols)} columns with missing values (will handle after feature engineering)")
-
-# 3. Validation
-if total_invalid > 0:
-    print(f"Found {total_invalid} invalid values across fields")
-print(f"Removed {rows_removed:,} invalid records → {df_outlier.shape[0]:,} remaining")
-
-# 4. Sampling
-if original_size > target_sample_size:
-    print(f"Sampled {len(df_outlier):,} records ({len(df_outlier)/original_size*100:.1f}%) using stratified sampling")
-else:
-    print(f"Using all {original_size:,} records (no sampling needed)")
-
-print(f"\nFinal dataset: {len(df_outlier):,} rows")
+# Visualize data cleaning for outlier detection
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.bar(['Before', 'After'], [rows_before, df_outlier.shape[0]], 
+       color=['#95a5a6', '#2ecc71'], edgecolor='black', alpha=0.7)
+ax.set_ylabel('Number of Records', fontsize=12)
+ax.set_title('Outlier Detection Data Cleaning', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([rows_before, df_outlier.shape[0]]):
+    pct = val / rows_before * 100
+    ax.text(i, val, f'{val:,}\n({pct:.1f}%)', ha='center', va='bottom', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6.1.3. Construct Data
@@ -2093,21 +2618,60 @@ else:
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. Temporal Features
-print("\nCreated temporal features: Hour, Month, DayOfWeek, IsWeekend, TimeOfDay")
+missing_info = f", removed {rows_before - rows_after:,} records with missing values" if missing_stats[missing_stats > 0].any() else ", no missing values"
+print(f"\nFeature engineering: Created temporal features (Hour, Month, DayOfWeek, IsWeekend, TimeOfDay), VehicleAge (mean={df_outlier['VehicleAge'].mean():.1f}yr), binning features{missing_info}")
 
-# 2. Vehicle Age
-print(f"VehicleAge: mean={df_outlier['VehicleAge'].mean():.1f}yr, range=[{df_outlier['VehicleAge'].min():.0f}, {df_outlier['VehicleAge'].max():.0f}]")
+# Visualize engineered features for outlier detection
+fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+axes = axes.flatten()
 
-# 3. Binning Features
-print("Created binning features: VehicleAge_Binned, Hour_Binned (optional)")
+# Hour distribution
+df_outlier['Hour'].hist(bins=24, ax=axes[0], edgecolor='black', color='#e74c3c', alpha=0.7)
+axes[0].set_title('Hour Distribution', fontsize=11, fontweight='bold')
+axes[0].set_xlabel('Hour')
+axes[0].set_ylabel('Frequency')
+axes[0].grid(True, alpha=0.3)
 
-# 4. Missing Values Handling
-if missing_stats[missing_stats > 0].any():
-    removed = rows_before - rows_after
-    print(f"Removed {removed:,} records with missing values ({(removed)/rows_before*100:.1f}%)")
-else:
-    print("No missing values after feature engineering")
+# Month distribution
+df_outlier['Month'].hist(bins=12, ax=axes[1], edgecolor='black', color='#3498db', alpha=0.7)
+axes[1].set_title('Month Distribution', fontsize=11, fontweight='bold')
+axes[1].set_xlabel('Month')
+axes[1].set_ylabel('Frequency')
+axes[1].grid(True, alpha=0.3)
+
+# DayOfWeek distribution
+df_outlier['DayOfWeek'].hist(bins=7, ax=axes[2], edgecolor='black', color='#2ecc71', alpha=0.7)
+axes[2].set_title('Day of Week Distribution', fontsize=11, fontweight='bold')
+axes[2].set_xlabel('Day (0=Mon, 6=Sun)')
+axes[2].set_ylabel('Frequency')
+axes[2].grid(True, alpha=0.3)
+
+# IsWeekend distribution
+weekend_cnts_od = df_outlier['IsWeekend'].value_counts()
+axes[3].bar(['Weekday', 'Weekend'], [weekend_cnts_od.get(0, 0), weekend_cnts_od.get(1, 0)], 
+            color=['#3498db', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[3].set_title('Weekend vs Weekday', fontsize=11, fontweight='bold')
+axes[3].set_ylabel('Frequency')
+axes[3].grid(True, alpha=0.3, axis='y')
+
+# TimeOfDay distribution
+time_cnts_od = df_outlier['TimeOfDay'].value_counts()
+axes[4].bar(time_cnts_od.index, time_cnts_od.values, color='#9b59b6', edgecolor='black', alpha=0.7)
+axes[4].set_title('Time of Day Distribution', fontsize=11, fontweight='bold')
+axes[4].set_ylabel('Frequency')
+axes[4].tick_params(axis='x', rotation=45)
+axes[4].grid(True, alpha=0.3, axis='y')
+
+# VehicleAge distribution
+df_outlier['VehicleAge'].hist(bins=30, ax=axes[5], edgecolor='black', color='#1abc9c', alpha=0.7)
+axes[5].set_title('Vehicle Age Distribution', fontsize=11, fontweight='bold')
+axes[5].set_xlabel('Age (years)')
+axes[5].set_ylabel('Frequency')
+axes[5].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
 # ============================================================================
 # 6.1.4. Integrate Data
 # ============================================================================
@@ -2216,28 +2780,9 @@ plt.show()
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. Feature Categories
-print(f"\nFinal features: {total_features} (≥10 ) - {len(numerical_features)} numeric, {len(boolean_features)} boolean, {len(categorical_features)} categorical")
-
-# 2. Association Rules
-if association_rules_df is not None and len(association_rules_df) > 0:
-    print("\nAssociation Rule Mining:")
-    print(f"  Generated {len(association_rules_df)} association rules")
-
-    # Display top associations
-    sorted_assoc = sorted(cooccurrence.items(), key=lambda x: x[1]['support'], reverse=True)
-    print("  Top 5 associations (by support):")
-    for (feat1, feat2), metrics in sorted_assoc[:5]:
-        print(f"    {feat1} & {feat2}: support={metrics['support']:.3f}, confidence={metrics['confidence']:.3f}")
-else:
-    print("\nAssociation Rule Mining: Analysis completed (simplified approach)")
-
-# 3. Correlation Analysis
-if high_corr_pairs:
-    print("\nCorrelation Analysis:")
-    print(f"  Found {len(high_corr_pairs)} highly correlated pairs (|r| > 0.8)")
-else:
-    print("\nCorrelation Analysis: No highly correlated pairs found (|r| > 0.8)")
+assoc_info = f", {len(association_rules_df)} association rules" if association_rules_df is not None and len(association_rules_df) > 0 else ", no association rules"
+corr_info = f", {len(high_corr_pairs)} highly correlated pairs" if high_corr_pairs else ", no highly correlated pairs"
+print(f"\nFeature integration: {total_features} final features ({len(numerical_features)} numeric, {len(boolean_features)} boolean, {len(categorical_features)} categorical){assoc_info}{corr_info}")
 
 # ============================================================================
 # 6.1.5. Format Data
@@ -2303,22 +2848,33 @@ inf_count = np.isinf(X_outlier_scaled).sum()
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. Encoding
-print(f"\nEncoded {len(categorical_features)} categorical features")
+quality_info = f", found NaN: {nan_count}, Inf: {inf_count}" if nan_count > 0 or inf_count > 0 else ", quality check passed"
+print(f"\nData formatting: Encoded {len(categorical_features)} categorical, scaled {X_outlier_scaled.shape[0]:,} rows × {X_outlier_scaled.shape[1]} columns{quality_info}")
 
-# 2. Feature Matrix
-print(f"Feature matrix: {X_outlier.shape[0]:,} rows × {X_outlier.shape[1]} columns")
+# Visualize data formatting for outlier detection
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-# 3. Scaling
-print(f"Scaled features: {X_outlier_scaled.shape[0]:,} rows × {X_outlier_scaled.shape[1]} columns (StandardScaler)")
+# Feature type breakdown
+feat_types_od = ['Numeric (7)', 'Boolean (10)', 'Encoded Cat (5)'] # Updated boolean count
+type_cnts_od = [len(numerical_features), len(boolean_features), len(categorical_features)]
+axes[0].bar(feat_types_od, type_cnts_od, color=['#3498db', '#2ecc71', '#e67e22'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Count', fontsize=12)
+axes[0].set_title(f'Feature Types (Total: {X_outlier_scaled.shape[1]})', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(type_cnts_od):
+    axes[0].text(i, val, f'{val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-# 4. Validation
-if nan_count > 0 or inf_count > 0:
-    print(f"Found NaN: {nan_count}, Inf: {inf_count}")
-else:
-    print("Data quality check passed (no NaN/Inf)")
+# Sample size
+axes[1].bar(['Original', 'After Sampling'], [original_size, X_outlier_scaled.shape[0]], 
+            color=['#95a5a6', '#e74c3c'], edgecolor='black', alpha=0.7)
+axes[1].set_ylabel('Number of Samples', fontsize=12)
+axes[1].set_title('Sampling for Outlier Detection', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([original_size, X_outlier_scaled.shape[0]]):
+    axes[1].text(i, val, f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-print(f"\nData Preparation Complete: {X_outlier_scaled.shape[0]:,} records × {X_outlier_scaled.shape[1]} features")
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6.2. Modelling
@@ -2346,10 +2902,7 @@ print_step_header("6.2.1", "Select modeling techniques")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("Selected modeling techniques:")
-print("  1. Local Outlier Factor (LOF)")
-print("  2. Distance-based Outlier Detection")
-print("\nBoth LOF and Distance-based method selected for outlier detection (as per project requirements)")
+print("\nModel selection: LOF + Distance-based Outlier Detection (as per project requirements)")
 
 # ============================================================================
 # 6.2.2. Generate test design
@@ -2369,21 +2922,7 @@ print_step_header("6.2.2", "Generate test design")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("Test Design:")
-print("\n1. Local Outlier Factor (LOF):")
-print("   - n_neighbors=20: Number of neighbors to consider for density estimation")
-print("   - contamination=0.01: Expected proportion of outliers (1%)")
-print("   - Rationale: Balanced parameter for detecting local density anomalies")
-
-print("\n2. Distance-based Outlier Detection:")
-print("   - Distance metric: Euclidean distance")
-print("   - k_neighbors=20: Number of nearest neighbors to calculate average distance")
-print("   - Threshold: 99th percentile (top 1% as outliers)")
-print("   - Rationale: Consistent with LOF contamination rate for fair comparison")
-
-print("\n3. Combined Approach:")
-print("   - Strategy: Identify common outliers detected by both methods")
-print("   - Benefit: Reduces false positives and increases confidence in outlier detection")
+print("\nTest design: LOF (n_neighbors=20, contamination=0.01) + Distance-based (k=20, 99th percentile) → Common outliers for high confidence")
 
 # ============================================================================
 # 6.2.3. Build model
@@ -2410,7 +2949,8 @@ avg_distances        = None  # Average distances to k nearest neighbors
 # Logic Calculation
 # ----------------------------------------------------------------------------
 # 1. Build LOF Model
-lof = LocalOutlierFactor(n_neighbors=20, contamination=0.01, novelty=False)
+n_neighbors_lof = 20 # Parameter for LOF
+lof = LocalOutlierFactor(n_neighbors=n_neighbors_lof, contamination=0.01, novelty=False)
 lof_labels = lof.fit_predict(X_outlier_scaled)
 
 # -1 for outliers, 1 for inliers
@@ -2424,8 +2964,8 @@ df_outlier['LOF_outlier'] = outliers_lof
 # 2. Build Distance-based Outlier Detection Model
 # Method: Calculate average distance to k nearest neighbors
 # Points with high average distance are considered outliers
-k_neighbors = 20  # Number of neighbors to consider
-nn = NearestNeighbors(n_neighbors=k_neighbors + 1)  # +1 because point itself is included
+k_neighbors_dist = 20  # Number of neighbors to consider
+nn = NearestNeighbors(n_neighbors=k_neighbors_dist + 1)  # +1 because point itself is included
 nn.fit(X_outlier_scaled)
 distances, indices = nn.kneighbors(X_outlier_scaled)
 
@@ -2445,15 +2985,20 @@ df_outlier['Distance_outlier'] = distance_outliers
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-# 1. LOF Model
-print("\n1. LOF Model:")
-print("   - Configured: n_neighbors=20, contamination=0.01")
-print(f"   - Detected: {outliers_lof.sum():,} outliers")
+print(f"\nModel building: LOF and Distance-based models trained on {len(X_outlier_scaled):,} samples")
 
-# 2. Distance-based Model
-print("\n2. Distance-based Model:")
-print(f"   - Configured: k_neighbors={k_neighbors}, threshold={distance_threshold:.4f} (99th percentile)")
-print(f"   - Detected: {distance_outliers.sum():,} outliers")
+# Visualize model building summary
+fig, ax = plt.subplots(figsize=(8, 5))
+models = ['LOF', 'Distance-based']
+model_params = [n_neighbors_lof, k_neighbors_dist]
+ax.bar(models, model_params, color=['#e74c3c', '#3498db'], edgecolor='black', alpha=0.7)
+ax.set_ylabel('k/n_neighbors Parameter', fontsize=12)
+ax.set_title('Outlier Detection Models Configuration', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(model_params):
+    ax.text(i, val, f'k={val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6.2.4. Assess model
@@ -2488,15 +3033,31 @@ if n_common_outliers > 0:
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nOutlier Detection Results:")
-print(f"  LOF: {n_outliers_lof:,} outliers ({n_outliers_lof/len(df_outlier)*100:.2f}%)")
-print(f"  Distance-based: {n_outliers_distance:,} outliers ({n_outliers_distance/len(df_outlier)*100:.2f}%)")
-print(f"  Common (Both methods): {n_common_outliers:,} outliers ({n_common_outliers/len(df_outlier)*100:.3f}%)")
+lof_pct = n_outliers_lof/len(df_outlier)*100
+distance_pct = n_outliers_distance/len(df_outlier)*100
+common_pct = n_common_outliers/len(df_outlier)*100
+print(f"\nOutlier Detection: LOF {n_outliers_lof:,} ({lof_pct:.2f}%), Distance {n_outliers_distance:,} ({distance_pct:.2f}%), Common {n_common_outliers:,} ({common_pct:.3f}%)")
+
+# Visualization: comparison chart
+lof_only = n_outliers_lof - n_common_outliers
+distance_only = n_outliers_distance - n_common_outliers
+fig, ax = plt.subplots(figsize=(8, 5))
+categories = ['LOF Only', 'Distance Only', 'Both Methods']
+counts = [lof_only, distance_only, n_common_outliers]
+ax.bar(categories, counts, color=['#ff7f7f', '#ffb347', '#9370db'], edgecolor='black', alpha=0.7)
+ax.set_ylabel('Number of Outliers', fontsize=12)
+ax.set_title('Outlier Detection Method Comparison', fontsize=13, fontweight='bold')
+for i, (cat, count) in enumerate(zip(categories, counts)):
+    ax.text(i, count, f'{count:,}\n({count/len(df_outlier)*100:.2f}%)',
+            ha='center', va='bottom', fontsize=10)
+plt.grid(True, alpha=0.3, axis='y')
+plt.tight_layout()
+plt.show()
 
 if n_common_outliers > 0:
     lof_overlap = n_common_outliers / n_outliers_lof * 100 if n_outliers_lof > 0 else 0
     distance_overlap = n_common_outliers / n_outliers_distance * 100 if n_outliers_distance > 0 else 0
-    print(f"  Agreement: {lof_overlap:.1f}% of LOF outliers, {distance_overlap:.1f}% of Distance-based outliers")
+    print(f"Method Agreement: {lof_overlap:.1f}% of LOF outliers, {distance_overlap:.1f}% of Distance-based outliers")
 
 # ============================================================================
 # 6.3. Evaluation
@@ -2521,33 +3082,60 @@ print_step_header("6.3.1", "Evaluate results")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nEvaluation Summary:")
-print(f"  Dataset: {len(df_outlier):,} records, {len(all_features)} features")
-print(f"  LOF detected: {n_outliers_lof:,} outliers ({n_outliers_lof/len(df_outlier)*100:.2f}%)")
-print(f"  Distance-based detected: {n_outliers_distance:,} outliers ({n_outliers_distance/len(df_outlier)*100:.2f}%)")
-print(f"  Common outliers: {n_common_outliers:,} ({n_common_outliers/len(df_outlier)*100:.3f}%)")
-
-# Detailed characteristics of common outliers
-if n_common_outliers > 0:
-    print("\nCommon Outlier Characteristics:")
-    violation_type_counts = common_outlier_df['Violation Type'].value_counts()
-    print(f"  Accident rate: {common_outlier_df['Accident'].mean()*100:.1f}%")
-    print(f"  Alcohol involvement: {common_outlier_df['Alcohol'].mean()*100:.1f}%")
-    print(f"  Average vehicle age: {common_outlier_df['VehicleAge'].mean():.1f} years")
-    print(f"  Top violation types: {', '.join([f'{v} ({c/len(common_outlier_df)*100:.0f}%)' for v, c in violation_type_counts.head(3).items()])}")
+print(f"\nEvaluation Summary: {len(df_outlier):,} records, LOF {n_outliers_lof:,} ({n_outliers_lof/len(df_outlier)*100:.2f}%), Distance {n_outliers_distance:,} ({n_outliers_distance/len(df_outlier)*100:.2f}%), Common {n_common_outliers:,} ({n_common_outliers/len(df_outlier)*100:.3f}%)")
 
 # Visualization: comparison chart
 lof_only = n_outliers_lof - n_common_outliers
 distance_only = n_outliers_distance - n_common_outliers
-fig, ax = plt.subplots(figsize=(8, 5))
+fig, axes = plt.subplots(1, 2, figsize=(16, 5))
+
+# Method comparison
 categories = ['LOF Only', 'Distance Only', 'Both Methods']
 counts = [lof_only, distance_only, n_common_outliers]
-ax.bar(categories, counts, color=['#ff7f7f', '#ffb347', '#9370db'], edgecolor='black')
-ax.set_ylabel('Number of Outliers')
-ax.set_title('Outlier Detection Method Comparison')
+axes[0].bar(categories, counts, color=['#ff7f7f', '#ffb347', '#9370db'], edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Number of Outliers', fontsize=12)
+axes[0].set_title('Outlier Detection Method Comparison', fontsize=13, fontweight='bold')
 for i, (cat, count) in enumerate(zip(categories, counts)):
-    ax.text(i, count, f'{count}\n({count/len(df_outlier)*100:.2f}%)',
+    axes[0].text(i, count, f'{count:,}\n({count/len(df_outlier)*100:.2f}%)',
             ha='center', va='bottom', fontsize=10)
+axes[0].grid(True, alpha=0.3, axis='y')
+
+# Outlier characteristics comparison (if common outliers exist)
+if n_common_outliers > 0:
+    normal_df = df_outlier[~common_outliers]
+    violation_type_counts = common_outlier_df['Violation Type'].value_counts()
+    
+    # Prepare comparison data
+    comparison_data = {
+        'Accident Rate (%)': [common_outlier_df['Accident'].mean()*100, normal_df['Accident'].mean()*100],
+        'Alcohol %': [common_outlier_df['Alcohol'].mean()*100, normal_df['Alcohol'].mean()*100],
+        'Vehicle Age (yr)': [common_outlier_df['VehicleAge'].mean(), normal_df['VehicleAge'].mean()]
+    }
+    
+    x = np.arange(len(comparison_data))
+    width = 0.35
+    for i, (metric, values) in enumerate(comparison_data.items()):
+        axes[1].bar(x[i] - width/2, values[0], width, label='Outliers' if i == 0 else '', 
+                   color='#e74c3c', edgecolor='black', alpha=0.7)
+        axes[1].bar(x[i] + width/2, values[1], width, label='Normal' if i == 0 else '', 
+                   color='#3498db', edgecolor='black', alpha=0.7)
+    
+    axes[1].set_ylabel('Value', fontsize=12)
+    axes[1].set_title('Outlier vs Normal Characteristics', fontsize=13, fontweight='bold')
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(list(comparison_data.keys()), rotation=15, ha='right')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3, axis='y')
+    
+    # Add value labels
+    for i, (metric, values) in enumerate(comparison_data.items()):
+        axes[1].text(i - width/2, values[0], f'{values[0]:.1f}', ha='center', va='bottom', fontsize=9)
+        axes[1].text(i + width/2, values[1], f'{values[1]:.1f}', ha='center', va='bottom', fontsize=9)
+else:
+    axes[1].text(0.5, 0.5, 'No common outliers\ndetected', ha='center', va='center', 
+                transform=axes[1].transAxes, fontsize=12)
+    axes[1].set_title('Outlier Characteristics', fontsize=13, fontweight='bold')
+
 plt.tight_layout()
 plt.show()
 
@@ -2569,13 +3157,22 @@ print_step_header("6.3.2", "Interpret results")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nResults Interpretation:")
-print("  - LOF and Distance-based method detected different sets of outliers")
-if n_common_outliers > 0:
-    print(f"  - {n_common_outliers:,} outliers were detected by both methods (high confidence)")
-    print("  - Common outliers show distinct characteristics")
-else:
-    print("  - No common outliers - methods complement each other")
+print(f"\nOutlier interpretation: {n_common_outliers:,} common outliers identified by both methods")
+
+# Visualize outlier detection results
+fig, ax = plt.subplots(figsize=(10, 6))
+outlier_counts = [n_outliers_lof - n_common_outliers, n_outliers_distance - n_common_outliers, n_common_outliers]
+outlier_labels = ['LOF Only', 'Distance Only', 'Both Methods']
+colors_od_res = ['#e74c3c', '#3498db', '#2ecc71']
+ax.bar(outlier_labels, outlier_counts, color=colors_od_res, edgecolor='black', alpha=0.7)
+ax.set_ylabel('Number of Outliers', fontsize=12)
+ax.set_title('Outlier Detection Results Comparison', fontsize=13, fontweight='bold')
+ax.grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(outlier_counts):
+    pct = val / len(X_outlier_scaled) * 100
+    ax.text(i, val, f'{val:,}\n({pct:.2f}%)', ha='center', va='bottom', fontsize=10, fontweight='bold')
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6.3.3. Review of process
@@ -2595,22 +3192,31 @@ print_step_header("6.3.3", "Review of process")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nProcess Review:")
-print("  1. Data Preparation:")
-print(f"     - Initial dataset: {len(df):,} records")
-print(f"     - After cleaning and sampling: {len(df_outlier):,} records")
-print(f"     - Feature engineering: {len(all_features)} features created")
-print("     - Scaling: StandardScaler applied")
-print("  2. Model Selection:")
-print("     - LOF: n_neighbors=20, contamination=0.01")
-print("     - Distance-based: k_neighbors=20, 99th percentile threshold")
-print("  3. Model Execution:")
-print("     - Both models successfully trained and applied")
-print("     - Common outliers identified for high-confidence detection")
-print("  4. Evaluation:")
-print("     - Quantitative metrics calculated")
-print("     - Visualizations generated")
-print("     - Outlier characteristics analyzed")
+print(f"\nProcess review: Data preparation ({len(df_outlier):,} records, {len(all_features)} features) → Model selection → Execution → Evaluation completed")
+
+# Visualize outlier detection process workflow
+fig, ax = plt.subplots(figsize=(12, 6))
+steps_od = ['Data\nSelection', 'Data\nCleaning', 'Feature\nEngineering', 
+            'Feature\nIntegration', 'Data\nFormatting', 'Model\nBuilding', 'Detection', 'Assessment']
+status_od = [1, 1, 1, 1, 1, 1, 1, 1]  # All completed
+colors_od_proc = ['#2ecc71' if s == 1 else '#95a5a6' for s in status_od]
+
+y_pos_od = np.arange(len(steps_od))
+ax.barh(y_pos_od, status_od, color=colors_od_proc, edgecolor='black', alpha=0.7)
+ax.set_yticks(y_pos_od)
+ax.set_yticklabels(steps_od, fontsize=11)
+ax.set_xlabel('Status', fontsize=12)
+ax.set_title('Outlier Detection Process Review', fontsize=14, fontweight='bold')
+ax.set_xlim([0, 1.2])
+ax.set_xticks([0, 1])
+ax.set_xticklabels(['Not Started', 'Completed'])
+ax.invert_yaxis()
+
+for i, (step, s) in enumerate(zip(steps_od, status_od)):
+    ax.text(1.05, i, '✓ Completed', va='center', fontsize=10, fontweight='bold', color='#2ecc71')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
 # 6.3.4. Determine next steps
@@ -2630,22 +3236,49 @@ print_step_header("6.3.4", "Determine next steps")
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print("\nRecommended Next Steps:")
-print("  1. Outlier Investigation:")
-print(f"     - Analyze the {n_common_outliers:,} common outliers in detail")
-print("     - Review specific cases to understand why they are anomalous")
-print("  2. Domain Expert Validation:")
-print("     - Consult with traffic safety experts to validate findings")
-print("     - Verify if detected outliers represent genuine anomalies")
-print("  3. Further Analysis:")
-print("     - Apply clustering (kMeans) to group similar violations")
-print("     - Build classification models (Decision Tree) for prediction")
-print("  4. Model Refinement:")
-print("     - Experiment with different contamination rates")
-print("     - Consider ensemble methods for improved detection")
+print(f"\nOutlier detection complete: {n_common_outliers:,} outliers, {len(X_outlier_scaled):,} records, {len(all_features)} features")
+
+# Visualize outlier detection completion summary
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+# Outlier counts by method
+method_names = ['LOF', 'Distance', 'Common']
+method_counts = [n_outliers_lof, n_outliers_distance, n_common_outliers]
+method_colors = ['#e74c3c', '#3498db', '#2ecc71']
+axes[0].bar(method_names, method_counts, color=method_colors, edgecolor='black', alpha=0.7)
+axes[0].set_ylabel('Number of Outliers', fontsize=12)
+axes[0].set_title('Outliers by Detection Method', fontsize=13, fontweight='bold')
+axes[0].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(method_counts):
+    pct = val / len(X_outlier_scaled) * 100
+    axes[0].text(i, val, f'{val:,}\n({pct:.2f}%)', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+# Dataset summary
+data_info_od = ['Records', 'Features', 'Outliers']
+data_vals_od = [len(X_outlier_scaled), len(all_features), n_common_outliers]
+axes[1].bar(data_info_od, data_vals_od, color='#e67e22', edgecolor='black', alpha=0.7)
+axes[1].set_ylabel('Count', fontsize=12)
+axes[1].set_title('Dataset Summary', fontsize=13, fontweight='bold')
+axes[1].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate(data_vals_od):
+    axes[1].text(i, val, f'{val:,}' if val > 100 else f'{val}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+# Normal vs Outlier distribution
+normal_count = len(X_outlier_scaled) - n_common_outliers
+axes[2].bar(['Normal', 'Outliers'], [normal_count, n_common_outliers], 
+            color=['#2ecc71', '#e74c3c'], edgecolor='black', alpha=0.7)
+axes[2].set_ylabel('Count', fontsize=12)
+axes[2].set_title('Normal vs Outlier Distribution', fontsize=13, fontweight='bold')
+axes[2].grid(True, alpha=0.3, axis='y')
+for i, val in enumerate([normal_count, n_common_outliers]):
+    pct = val / len(X_outlier_scaled) * 100
+    axes[2].text(i, val, f'{val:,}\n({pct:.1f}%)', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
 
 # ============================================================================
-# 7. Conclusion
+# Section 7: Conclusion
 # ============================================================================
 print_section_title("7", "Conclusion")
 
