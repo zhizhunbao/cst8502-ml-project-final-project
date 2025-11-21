@@ -3277,10 +3277,7 @@ for i, val in enumerate([normal_count, n_common_outliers]):
 plt.tight_layout()
 plt.show()
 
-# ============================================================================
-# Section 7: Conclusion
-# ============================================================================
-print_section_title("7", "Conclusion")
+print_step_header("7", "Conclusion")
 
 print("\nThis project successfully applied machine learning techniques to analyze traffic violation data")
 print("from Montgomery County, addressing the business question: 'What are the key contributing")
