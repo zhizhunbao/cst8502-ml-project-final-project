@@ -1616,13 +1616,21 @@ df_cluster['TimeOfDay'] = df_cluster['Hour'].apply(categorize_time_of_day)
 current_year = 2025
 df_cluster['VehicleAge'] = current_year - df_cluster['Year'].fillna(current_year)
 
+# Geographic region clustering (using only Latitude and Longitude)
+geo_coords = df_cluster[['Latitude', 'Longitude']].values
+n_geo_regions = 8  # Number of geographic regions to create
+kmeans_geo = KMeans(n_clusters=n_geo_regions, random_state=2025, n_init=10, max_iter=300)
+df_cluster['GeographicRegion'] = kmeans_geo.fit_predict(geo_coords)
+
 # ----------------------------------------------------------------------------
 # Result Display
 # ----------------------------------------------------------------------------
-print(f"\nFeature engineering: Created 6 temporal/vehicle features (mean VehicleAge={df_cluster['VehicleAge'].mean():.1f}yr)")
+print(f"\nFeature engineering: Created 7 features (6 temporal/vehicle, 1 geographic region)")
+print(f"  - Temporal/Vehicle: mean VehicleAge={df_cluster['VehicleAge'].mean():.1f}yr")
+print(f"  - Geographic: {n_geo_regions} regions created from Latitude/Longitude clustering")
 
 # Visualize engineered features for clustering
-fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+fig, axes = plt.subplots(2, 4, figsize=(18, 8))
 axes = axes.flatten()
 
 # Hour distribution
@@ -1669,6 +1677,25 @@ axes[5].set_xlabel('Age (years)')
 axes[5].set_ylabel('Frequency')
 axes[5].grid(True, alpha=0.3)
 
+# GeographicRegion distribution
+geo_region_cnts = df_cluster['GeographicRegion'].value_counts().sort_index()
+axes[6].bar(geo_region_cnts.index.astype(str), geo_region_cnts.values, 
+            color='#f39c12', edgecolor='black', alpha=0.7)
+axes[6].set_title('Geographic Region Distribution', fontsize=11, fontweight='bold')
+axes[6].set_xlabel('Region ID')
+axes[6].set_ylabel('Frequency')
+axes[6].grid(True, alpha=0.3, axis='y')
+
+# Geographic scatter plot (Latitude vs Longitude colored by region)
+scatter = axes[7].scatter(df_cluster['Longitude'], df_cluster['Latitude'], 
+                         c=df_cluster['GeographicRegion'], cmap='tab10', 
+                         alpha=0.5, s=1, edgecolors='none')
+axes[7].set_title('Geographic Regions (Lat/Lon Clustering)', fontsize=11, fontweight='bold')
+axes[7].set_xlabel('Longitude')
+axes[7].set_ylabel('Latitude')
+axes[7].grid(True, alpha=0.3)
+plt.colorbar(scatter, ax=axes[7], label='Region ID')
+
 plt.tight_layout()
 plt.show()
 
@@ -1688,7 +1715,7 @@ final_features_cluster = None  # Final features for clustering
 # ----------------------------------------------------------------------------
 final_features_cluster = [
     'Hour', 'Month', 'DayOfWeek', 'IsWeekend',
-    'Latitude', 'Longitude',
+    'GeographicRegion',
     'VehicleAge',
     'Accident', 'Personal Injury', 'Property Damage', 'Fatal',
     'Alcohol', 'Work Zone',
@@ -1703,9 +1730,9 @@ print(f"\nFeature integration: {len(final_features_cluster)} features across 5 c
 
 # Visualize feature integration for clustering
 fig, ax = plt.subplots(figsize=(10, 6))
-cats = ['Temporal (4)', 'Geographic (2)', 'Vehicle (1)', 'Severity (4)', 
+cats = ['Temporal (4)', 'Geographic (1)', 'Vehicle (1)', 'Severity (4)', 
         'Risk (2)', 'Vehicle Type (2)', 'Categorical (5)']
-cnts = [4, 2, 1, 4, 2, 2, 5]
+cnts = [4, 1, 1, 4, 2, 2, 5]
 colors_cluster = plt.cm.plasma(np.linspace(0, 1, len(cats)))
 ax.barh(cats, cnts, color=colors_cluster, edgecolor='black', alpha=0.7)
 ax.set_xlabel('Number of Features', fontsize=12)
@@ -1756,7 +1783,7 @@ for feature in categorical_features_cluster:
 # Prepare feature matrix
 numeric_features_cluster = [
     'Hour', 'Month', 'DayOfWeek', 'IsWeekend',
-    'Latitude', 'Longitude', 'VehicleAge'
+    'GeographicRegion', 'VehicleAge'
 ]
 
 boolean_features_cluster = [

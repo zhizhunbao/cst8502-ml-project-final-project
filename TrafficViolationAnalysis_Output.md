@@ -1,6 +1,6 @@
 # Traffic Violation Analysis - Output Results
 
-**Generated on:** 2025-11-20 20:40:25
+**Generated on:** 2025-11-20 21:15:10
 
 ---
 
@@ -480,7 +480,9 @@ Data cleaning: 2,057,983 → 2,057,983 rows (removed missing coordinates)
 
 ### 5.1.3. Construct Data - Feature Engineering
 
-Feature engineering: Created 6 temporal/vehicle features (mean VehicleAge=17.3yr)
+Feature engineering: Created 7 features (6 temporal/vehicle, 1 geographic region)
+  - Temporal/Vehicle: mean VehicleAge=17.3yr
+  - Geographic: 8 regions created from Latitude/Longitude clustering
 
 
 
@@ -490,7 +492,7 @@ Feature engineering: Created 6 temporal/vehicle features (mean VehicleAge=17.3yr
 
 ### 5.1.4. Integrate Data
 
-Feature integration: 20 features across 5 categories
+Feature integration: 19 features across 5 categories
 
 
 
@@ -500,7 +502,7 @@ Feature integration: 20 features across 5 categories
 
 ### 5.1.5. Format Data - Encode, scale, and validate
 
-Data formatting: Encoded 5 categorical, scaled 10,000 × 20 features
+Data formatting: Encoded 5 categorical, scaled 10,000 × 19 features
 
 
 
@@ -528,7 +530,7 @@ Selected optimal k: 5
 
 ### 5.2.3. Build model
 
-KMeans Clustering: k=5, Silhouette=0.182, DB=1.651, Inertia=145020
+KMeans Clustering: k=5, Silhouette=0.169, DB=1.652, Inertia=143638
 
 
 
@@ -558,13 +560,13 @@ Cluster Characteristics: 5 clusters analyzed with key features
 ![Figure 26](images\figure_26.png)
 
 
-Model Assessment: k=5, Silhouette=0.182, DB=1.651, Outliers=100 (1.00%)
+Model Assessment: k=5, Silhouette=0.169, DB=1.652, Outliers=100 (1.00%)
 
 ## 5.3. Evaluation
 
 ### 5.3.1. Evaluate results
 
-Clustering Results: 10,000 records, k=5, Silhouette=0.182, DB=1.651, Inertia=145020
+Clustering Results: 10,000 records, k=5, Silhouette=0.169, DB=1.652, Inertia=143638
 
 
 
@@ -594,7 +596,7 @@ Process review: Complete clustering workflow from data preparation to evaluation
 
 ### 5.3.4. Determine next steps
 
-Clustering complete: k=5, 10,000 records, Silhouette=0.182
+Clustering complete: k=5, 10,000 records, Silhouette=0.169
 
 
 
@@ -754,8 +756,8 @@ factors that lead to different types of traffic violations?'
 ### 2. Clustering (KMeans):
    - Algorithm: KMeans with Elbow Method
    - Optimal clusters (k): 5
-   - Silhouette Score: 0.182
-   - Davies-Bouldin Score: 1.651
+   - Silhouette Score: 0.169
+   - Davies-Bouldin Score: 1.652
    - Key Findings:
      * Identified 5 distinct violation patterns
      * Geographic and temporal patterns revealed
