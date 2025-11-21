@@ -23,27 +23,34 @@ csv_path = os.path.join(script_dir, 'TrafficViolations.csv')
 # Helper Functions
 # ============================================================================
 
-SEPARATOR_LENGTH = 75
-SEPARATOR_CHAR = '='
-
+# Print step header
 def print_step_header(step_number, step_title, explanation=None):
-    separator = SEPARATOR_CHAR * SEPARATOR_LENGTH
-    print(f"\n{separator}")
-    print(f"# {step_number}: {step_title}")
-    print(f"{separator}")
+    # Determine heading level based on number of dots in step_number
+    dot_count = step_number.count('.')
+    if dot_count == 0:
+        # Level 1: # 1.
+        heading_level = "#"
+    elif dot_count == 1:
+        # Level 2: ## 2.1.
+        heading_level = "##"
+    else:
+        # Level 3: ### 2.1.1.
+        heading_level = "###"
+    
+    print(f"\n{heading_level} {step_number}. {step_title}")
     if explanation:
         print(f"# Explanation: {explanation}")
 
 
+# Print section title
 def print_section_title(title, subtitle=None):
-    separator = SEPARATOR_CHAR * SEPARATOR_LENGTH
-    print(f"\n{separator}")
-    print(f"# {title}")
-    print(f"{separator}")
+    # Section titles are typically level 3
+    print(f"\n### {title}")
     if subtitle:
-        print(f"# {subtitle}")
+        print(f"### {subtitle}")
 
 
+# Convert field to boolean type
 def _convert_to_boolean(df, field_name):
     bool_map = {
         'Yes':   True,  'Y':     True,  'yes':   True,  'y':     True,
@@ -62,6 +69,7 @@ def _convert_to_boolean(df, field_name):
     return series.astype('bool')
 
 
+# Convert field to integer type
 def _convert_to_integer(df, field_name):
     numeric_series = pd.to_numeric(df[field_name], errors='coerce')
     has_nan = numeric_series.isna().any()
@@ -72,6 +80,7 @@ def _convert_to_integer(df, field_name):
         return numeric_series.astype('int64'), False
 
 
+# Convert field data type
 def type_conversion(df, field_name, target_type, field_description=None):
     # Validate field exists
     if field_name not in df.columns:
@@ -116,6 +125,7 @@ def type_conversion(df, field_name, target_type, field_description=None):
 
     return df
 
+# Print categorical variable summary information
 def print_categorical_summary(df, col):
     if col not in df.columns:
         print(f"\nError: Column '{col}' not found in DataFrame")
@@ -152,6 +162,7 @@ def print_categorical_summary(df, col):
         print(f"  - Note: High cardinality ({unique_count:,} unique values) - "
               f"consider grouping for analysis")
 
+# Normalize axes objects to list format
 def _normalize_axes(axes, n_plots):
     if n_plots == 1:
         return [axes] if not isinstance(axes, (list, np.ndarray)) else [axes[0]]
@@ -161,6 +172,7 @@ def _normalize_axes(axes, n_plots):
         return [axes] if isinstance(axes, list) else list(axes)
 
 
+# Plot numeric variable distribution histogram
 def _plot_numeric_distribution(ax, df, col):
     df[col].hist(bins=50, ax=ax, edgecolor='black')
     ax.set_title(f'Distribution of {col}')
@@ -169,6 +181,7 @@ def _plot_numeric_distribution(ax, df, col):
     ax.grid(True, alpha=0.3)
 
 
+# Plot boolean variable distribution bar chart
 def _plot_boolean_distribution(ax, df, col):
     value_counts = df[col].value_counts()
 
@@ -189,6 +202,7 @@ def _plot_boolean_distribution(ax, df, col):
                ha='center', va='bottom', fontsize=9)
 
 
+# Plot categorical variable distribution bar chart
 def _plot_categorical_distribution(ax, df, col):
     unique_count = df[col].nunique()
 
@@ -206,6 +220,7 @@ def _plot_categorical_distribution(ax, df, col):
     ax.grid(True, alpha=0.3, axis='y')
 
 
+# Plot variable distributions
 def plot_distributions(df, columns, var_type='numeric'):
     if not columns or len(columns) == 0:
         print("Warning: No columns provided for plotting")
@@ -249,6 +264,7 @@ def plot_distributions(df, columns, var_type='numeric'):
     plt.show()
 
 
+# Get column types (numeric, boolean, categorical)
 def get_column_types(df, exclude_cols=None):
     exclude_cols = exclude_cols or []
     numeric_cols = [col for col in df.select_dtypes(include=[np.number]).columns.tolist()
@@ -259,6 +275,7 @@ def get_column_types(df, exclude_cols=None):
     return numeric_cols, bool_cols, categorical_cols
 
 
+# Categorize hour into time of day periods
 def categorize_time_of_day(hour):
     if pd.isna(hour):
         return 'Unknown'
@@ -272,6 +289,7 @@ def categorize_time_of_day(hour):
         return 'Evening'
 
 
+# Check for duplicate values in specified column
 def check_duplicates(df, id_column='SeqID', top_n=5):
     counts = df[id_column].value_counts()
     duplicates = counts[counts > 1].sort_values(ascending=False)
@@ -284,6 +302,7 @@ def check_duplicates(df, id_column='SeqID', top_n=5):
         print(f"  - No duplicate {id_column} values found")
 
 
+# Check for missing values in dataframe
 def check_missing_values(df):
     missing_cols = df.columns[df.isnull().any()].tolist()
     if not missing_cols:
@@ -1136,6 +1155,26 @@ print_step_header("4.3.2", "Interpret results")
 # Result Display
 # ----------------------------------------------------------------------------
 print(f"\nTop 10 Most Important Features:\n{feature_importance.head(10).to_string(index=False)}")
+
+# Print confusion matrix with actual values
+print(f"\nConfusion Matrix (Actual Values):")
+cm_df = pd.DataFrame(cm, 
+                     index=dt_classifier.classes_, 
+                     columns=dt_classifier.classes_)
+print(cm_df.to_string())
+
+# Visualize confusion matrix
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm_df, annot=True, fmt='d', cmap='Blues', 
+            xticklabels=dt_classifier.classes_,
+            yticklabels=dt_classifier.classes_,
+            cbar_kws={'label': 'Count'})
+plt.title('Confusion Matrix - Decision Tree Classification', fontsize=14, fontweight='bold')
+plt.ylabel('True Label', fontsize=12)
+plt.xlabel('Predicted Label', fontsize=12)
+plt.tight_layout()
+plt.show()
+
 print(f"\nConfusion Matrix Shape: {cm.shape}")
 
 # ============================================================================
@@ -1185,10 +1224,8 @@ print("  - Consider hyperparameter tuning for improved performance")
 print("  - Explore ensemble methods (Random Forest, Gradient Boosting)")
 print("  - Analyze misclassified cases for insights")
 
-print(f"\n{'='*75}")
-print(f"Classification Complete: {len(X_classify):,} records, {y_classify.nunique()} classes, {len(all_features_classify)} features")
+print(f"\nClassification Complete: {len(X_classify):,} records, {y_classify.nunique()} classes, {len(all_features_classify)} features")
 print(f"  Accuracy: Train {train_accuracy:.2%} | Test {test_accuracy:.2%}")
-print("="*75)
 
 # ============================================================================
 # 5. Clustering by KMeans
@@ -1443,9 +1480,7 @@ if len(X_cluster_scaled) > 10000:
 else:
     print(f"Using all {len(X_cluster_scaled):,} records for clustering")
 
-print(f"\n{'='*75}")
-print(f"Data Preparation Complete: {X_cluster_scaled.shape[0]:,} records × {X_cluster_scaled.shape[1]} features")
-print("="*75)
+print(f"\nData Preparation Complete: {X_cluster_scaled.shape[0]:,} records × {X_cluster_scaled.shape[1]} features")
 
 # ============================================================================
 # 5.2. Modelling
@@ -1772,9 +1807,7 @@ print("  - Consider hierarchical clustering for comparison")
 print("  - Analyze cluster stability with different initializations")
 print("  - Investigate outliers detected from clusters")
 
-print(f"\n{'='*75}")
-print(f"Clustering Complete: {len(df_cluster_sampled):,} records, k={optimal_k}, Silhouette={sil_score:.3f}")
-print("="*75)
+print(f"\nClustering Complete: {len(df_cluster_sampled):,} records, k={optimal_k}, Silhouette={sil_score:.3f}")
 
 # ============================================================================
 # 6. Outlier Detection by LOF and Distance-based method (and common outliers)
@@ -1977,9 +2010,7 @@ if original_size > target_sample_size:
 else:
     print(f"Using all {original_size:,} records (no sampling needed)")
 
-print(f"\n{'='*75}")
-print(f"Final dataset: {len(df_outlier):,} rows")
-print("="*75)
+print(f"\nFinal dataset: {len(df_outlier):,} rows")
 
 # ============================================================================
 # 6.1.3. Construct Data
@@ -2287,9 +2318,7 @@ if nan_count > 0 or inf_count > 0:
 else:
     print("Data quality check passed (no NaN/Inf)")
 
-print(f"\n{'='*75}")
-print(f"Data Preparation Complete: {X_outlier_scaled.shape[0]:,} records × {X_outlier_scaled.shape[1]} features")
-print("="*75)
+print(f"\nData Preparation Complete: {X_outlier_scaled.shape[0]:,} records × {X_outlier_scaled.shape[1]} features")
 
 # ============================================================================
 # 6.2. Modelling
@@ -2618,31 +2647,67 @@ print("     - Consider ensemble methods for improved detection")
 # ============================================================================
 # 7. Conclusion
 # ============================================================================
-print(f"\n{'='*75}")
-print("TRAFFIC VIOLATION ANALYSIS - PROJECT COMPLETE")
-print("="*75)
-print("\nDataset Overview:")
-print(f"  Initial records: {len(df):,}")
-print(f"  After preparation: {len(df_outlier):,} records")
-print(f"  Features engineered: {len(all_features)}")
+print_section_title("7", "Conclusion")
 
-print("\n1. Classification (Decision Tree):")
+print("\nThis project successfully applied machine learning techniques to analyze traffic violation data")
+print("from Montgomery County, addressing the business question: 'What are the key contributing")
+print("factors that lead to different types of traffic violations?'")
+
+print("\n## Summary of Results")
+print("\n### Dataset Overview:")
+print(f"  - Initial records: {len(df):,}")
+print(f"  - After preparation: {len(df_outlier):,} records")
+print(f"  - Features engineered: {len(all_features)}")
+
+print("\n### 1. Classification (Decision Tree):")
 print("   - Model: Decision Tree with Cross-Validation")
-print("   - Target: Accident prediction")
-print("   - Cross-Validation Accuracy: Available in Section 4 results")
-print("   - Key insights: Decision tree rules extracted and visualized")
+print("   - Target Variable: Violation Type")
+print(f"   - Cross-Validation Accuracy: {cv_scores.mean():.2%} (+/- {cv_scores.std() * 2:.2%})")
+print("   - Key Findings:")
+print("     * Contributed To Accident is the most important feature (37.0% importance)")
+print("     * Time of day (Hour) and Vehicle Age are significant contributing factors")
+print("     * Decision tree rules provide interpretable insights for law enforcement")
 
-print("\n2. Clustering (KMeans):")
+print("\n### 2. Clustering (KMeans):")
 print("   - Algorithm: KMeans with Elbow Method")
 print(f"   - Optimal clusters (k): {optimal_k}")
-print("   - Evaluation: Silhouette and Davies-Bouldin scores calculated")
-print("   - Key insights: Geographic and behavioral patterns identified")
+print(f"   - Silhouette Score: {sil_score:.3f}")
+print(f"   - Davies-Bouldin Score: {db_score:.3f}")
+print("   - Key Findings:")
+print("     * Identified 5 distinct violation patterns")
+print("     * Geographic and temporal patterns revealed")
+print("     * Cluster outliers detected for further investigation")
 
-print("\n3. Outlier Detection:")
+print("\n### 3. Outlier Detection:")
 print("   - Methods: LOF + Distance-based (combined approach)")
 print(f"   - LOF detected: {n_outliers_lof:,} outliers ({n_outliers_lof/len(df_outlier)*100:.2f}%)")
 print(f"   - Distance-based detected: {n_outliers_distance:,} outliers ({n_outliers_distance/len(df_outlier)*100:.2f}%)")
 print(f"   - High-confidence outliers (both methods): {n_common_outliers:,} ({n_common_outliers/len(df_outlier)*100:.3f}%)")
+print("   - Key Findings:")
+print("     * Common outliers show distinct characteristics (40.7% accident rate)")
+print("     * Both methods agree on 54 high-confidence outliers")
+print("     * Outliers warrant further investigation for data quality and fraud detection")
+
+print("\n## Project Achievements")
+print("\n✓ All three required data mining tasks completed successfully")
+print("✓ Models validated using appropriate evaluation metrics")
+print("✓ Results are interpretable and provide actionable insights")
+print("✓ Cross-validation applied for classification task")
+print("✓ Association rule mining and correlation analysis performed")
+print("✓ Comprehensive documentation following CRISP-DM methodology")
+
+print("\n## Business Impact")
+print("\nThe analysis provides valuable insights for:")
+print("  - Law enforcement resource allocation based on temporal and geographic patterns")
+print("  - Targeted prevention strategies using decision tree rules")
+print("  - Data quality improvement through outlier detection")
+print("  - Understanding contributing factors to different violation types")
+
+print("\n## Limitations and Future Work")
+print("\n  - Model accuracy (57%) could be improved with hyperparameter tuning")
+print("  - Consider ensemble methods (Random Forest, Gradient Boosting) for better performance")
+print("  - Expand feature engineering to include more contextual information")
+print("  - Validate outlier findings with domain experts")
+print("  - Explore additional clustering algorithms for comparison")
 
 print("\nProject Status: All required analyses completed successfully")
-print("="*75)
